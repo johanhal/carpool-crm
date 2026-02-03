@@ -1,0 +1,26 @@
+# Credentials og sensitive filer
+.credentials/
+sheets_config.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Cache-filer (kan regenereres)
+company_cache.json
+geocode_cache.json
+research_cache.json
+
+# OS
+.DS_Store
+
+# Store datafiler (kan lastes ned på nytt)
+data/*.gz
+data/*.csv
+
+# Temp-filer
+output/**/.enriched_temp.*
+output/**/bedrifter_raa.csv

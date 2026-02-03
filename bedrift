@@ -1,0 +1,163 @@
+#!/bin/bash
+# Ruter - bedriftsøk for samkjøring
+# Finn bedrifter i et geografisk område og kontaktpersoner for samkjøringspilot
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/venv/bin/activate"
+
+echo "============================================================"
+echo "  Ruter - bedriftsøk for samkjøring"
+echo "  Lag GeoJSON på: https://geojson.io"
+echo "============================================================"
+echo ""
+
+# Steg 1: Filtrer etter GeoJSON
+# Capture output - last line is the output file path
+OUTPUT=$(python "$SCRIPT_DIR/filter_companies.py" "$@")
+EXIT_CODE=$?
+
+# Print the output (except last two lines which are area_name and path)
+echo "$OUTPUT" | head -n -2
+
+if [ $EXIT_CODE -eq 0 ]; then
+    # Get the area name and filtered file path (last two lines of output)
+    AREA_NAME=$(echo "$OUTPUT" | tail -n 2 | head -n 1)
+    FILTERED_FILE=$(echo "$OUTPUT" | tail -n 1)
+
+    if [ -f "$FILTERED_FILE" ]; then
+        # All files go in the area folder
+        AREA_FOLDER=$(dirname "$FILTERED_FILE")
+
+        # Intermediate files (will be deleted)
+        ENRICHED_FILE="$AREA_FOLDER/.enriched_temp.csv"
+        CONTACTS_FILE="$AREA_FOLDER/.contacts_temp.csv"
+
+        # Final output files
+        FINAL_CSV="$AREA_FOLDER/bedrifter.csv"
+        FINAL_HTML="$AREA_FOLDER/rapport.html"
+
+        echo ""
+        echo "============================================================"
+        echo "  Steg 2: Beriker med BRREG-data..."
+        echo "============================================================"
+        python "$SCRIPT_DIR/enrich_companies.py" "$FILTERED_FILE" -o "$ENRICHED_FILE"
+
+        echo ""
+        echo "============================================================"
+        echo "  Steg 3: Finner kontaktpersoner med Claude..."
+        echo "============================================================"
+        echo ""
+
+        # Sjekk om claude er tilgjengelig
+        if command -v claude &> /dev/null; then
+            cd "$SCRIPT_DIR"
+
+            PROMPT="Du skal bygge en komplett salgsliste for Ruters samkjøringspilot. Les $ENRICHED_FILE.
+
+VIKTIG: Du skal IKKE gi deg før du har funnet kontaktperson for HVER bedrift. Tomme felter er IKKE akseptabelt med mindre du har uttømt ALLE kilder.
+
+METODIKK FOR HVER BEDRIFT (følg denne rekkefølgen):
+
+1. HJEMMESIDE (hvis tilgjengelig):
+   - Gå til /kontakt, /om-oss, /about, /contact, /ledelse, /ansatte
+   - Let etter: HR-sjef, Personalsjef, Bærekraftsansvarlig, Daglig leder, CEO, Administrerende direktør
+   - Noter miljøsertifiseringer (Miljøfyrtårn, ISO 14001, Svanemerket)
+
+2. PROFF.NO (ALLTID sjekk denne):
+   - Bruk proff_url fra filen, eller søk på bedriftsnavn
+   - Under 'Roller' finner du styreleder, daglig leder, og andre nøkkelpersoner med navn
+   - Dette er ofte den beste kilden for kontaktpersoner
+
+3. LINKEDIN (hvis fortsatt mangler):
+   - Søk: '[Bedriftsnavn] HR' eller '[Bedriftsnavn] daglig leder'
+   - Finn relevante personer med navn og rolle
+
+4. WEBSØK (siste utvei):
+   - Søk: '[Bedriftsnavn] kontakt daglig leder' eller '[Bedriftsnavn] HR ansvarlig'
+
+PRIORITERT REKKEFØLGE FOR KONTAKTPERSON:
+- HR-direktør, HR-sjef, People & Culture-leder
+- Bærekraftsansvarlig, ESG-ansvarlig, Miljøansvarlig
+- Kontorsjef, Facility Manager, Administrasjonssjef
+- Daglig leder / CEO (spesielt for bedrifter < 50 ansatte)
+- Styreleder (hvis ingen andre finnes)
+
+SALGSARGUMENTER - finn spesifikke argumenter for hver bedrift:
+- Miljøsertifiseringer de har
+- Vekst/ekspansjon som skaper behov
+- Bransje som passer (transport, logistikk, bygg med mange på samme prosjekter)
+- Lokasjon i industriområde med flere bedrifter
+
+OUTPUT: Lagre til $FINAL_CSV med ALLE disse kolonnene:
+organisasjonsnummer,navn,antallAnsatte,adresse,latitude,longitude,naeringskode_beskrivelse,hjemmeside,kontakt_navn,kontakt_rolle,kontakt_telefon,kontakt_epost,salgsnotater,proff_url
+
+KRAV TIL KVALITET:
+- kontakt_navn: SKAL ha verdi (minst daglig leder fra Proff.no)
+- kontakt_rolle: SKAL ha verdi
+- salgsnotater: SKAL ha minst 2-3 spesifikke argumenter per bedrift
+- Kun UNNTAKSVIS skal felter være tomme, og da kun etter at alle kilder er sjekket
+
+Start med å lese $ENRICHED_FILE, deretter jobb systematisk gjennom hver bedrift."
+
+            # Start claude interaktivt med prompten
+            echo "$PROMPT" | claude --allowedTools "WebSearch,WebFetch,Read,Write,Task"
+
+            # Check if Claude created the final CSV
+            if [ -f "$FINAL_CSV" ]; then
+                # Clean up intermediate files
+                rm -f "$FILTERED_FILE" "$ENRICHED_FILE" "$CONTACTS_FILE"
+
+                # Generate HTML report
+                echo ""
+                echo "============================================================"
+                echo "  Steg 4: Genererer HTML-rapport..."
+                echo "============================================================"
+                python -c "
+import pandas as pd
+from pathlib import Path
+import sys
+sys.path.insert(0, '$SCRIPT_DIR')
+from enrich_companies import generate_html_report
+
+df = pd.read_csv('$FINAL_CSV', dtype=str)
+html_path = generate_html_report(df, Path('$FINAL_CSV'), '$AREA_NAME'.replace('_', ' ').title())
+print(f'HTML-rapport: {html_path}')
+"
+                # Rename HTML to rapport.html
+                mv "${FINAL_CSV%.csv}.html" "$FINAL_HTML" 2>/dev/null || true
+
+                # Sync to Google Sheets if configured
+                if [ -f "$SCRIPT_DIR/sheets_config.json" ]; then
+                    echo ""
+                    echo "============================================================"
+                    echo "  Steg 5: Synkroniserer til Google Sheets..."
+                    echo "============================================================"
+                    python "$SCRIPT_DIR/google_sheets.py" sync "$FINAL_CSV"
+                fi
+
+                echo ""
+                echo "============================================================"
+                echo "  Ferdig! Resultater i: $AREA_FOLDER"
+                echo ""
+                echo "  📄 $FINAL_CSV"
+                echo "  📊 $FINAL_HTML"
+                echo "============================================================"
+
+                # Open HTML report
+                open "$FINAL_HTML" 2>/dev/null || xdg-open "$FINAL_HTML" 2>/dev/null || echo "Åpne rapporten manuelt: $FINAL_HTML"
+            else
+                echo ""
+                echo "Advarsel: Ferdig CSV ble ikke opprettet av Claude."
+                echo "Mellomfiler beholdt for feilsøking i: $AREA_FOLDER"
+            fi
+        else
+            echo "Claude CLI ikke funnet. Installer det eller kjør manuelt:"
+            echo "  claude 'Finn kontaktpersoner for $ENRICHED_FILE'"
+            echo ""
+            echo "Mellomfiler i: $AREA_FOLDER"
+        fi
+    else
+        echo "Feil: Kunne ikke finne output-filen: $FILTERED_FILE"
+        exit 1
+    fi
+fi
