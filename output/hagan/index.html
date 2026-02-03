@@ -1,0 +1,2807 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salgsliste Hagan - Ruter Samkjøring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --ruter-red: #E60000;
+            --ruter-red-dark: #A20000;
+            --ruter-red-light: #FDEBEB;
+            --ruter-navy: #313663;
+            --ruter-blue: #002B79;
+            --ruter-gray: #6D7196;
+            --ruter-gray-light: #F8F8F8;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--ruter-gray-light);
+            color: var(--ruter-navy);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--ruter-red) 0%, var(--ruter-red-dark) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .header p { opacity: 0.9; }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            padding: 1rem 2rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--ruter-red); }
+        .stat-label { font-size: 0.7rem; color: var(--ruter-gray); text-transform: uppercase; }
+
+        .controls { display: flex; gap: 0.5rem; align-items: center; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: var(--ruter-navy);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+        .btn:hover { background: var(--ruter-blue); }
+        .btn.active { background: var(--ruter-red); }
+        .btn i { width: 16px; height: 16px; }
+
+        .sort-group { display: flex; gap: 0.25rem; }
+        .sort-btn {
+            padding: 0.4rem 0.75rem;
+            background: #e5e7eb;
+            color: var(--ruter-navy);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+        }
+        .sort-btn:hover { background: #d1d5db; }
+        .sort-btn.active { background: var(--ruter-red); color: white; }
+
+        #map {
+            height: 350px;
+            display: none;
+            margin: 1rem auto;
+            max-width: 800px;
+            border-radius: var(--radius);
+            border: 1px solid #e5e7eb;
+        }
+        #map.visible { display: block; }
+
+        .cards-container {
+            padding: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .company-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .card-main { padding: 1.25rem; }
+
+        .card-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            background: var(--ruter-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .header-content { flex: 1; }
+        .company-name { font-size: 1.1rem; font-weight: 600; color: var(--ruter-navy); margin-bottom: 0.35rem; }
+
+        .meta-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .employee-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.85rem;
+            color: var(--ruter-gray);
+        }
+        .employee-count i { width: 14px; height: 14px; }
+
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .score-badge i { width: 12px; height: 12px; }
+        .score-high { background: #dcfce7; color: #166534; }
+        .score-medium { background: #fef3c7; color: #92400e; }
+        .score-low { background: #f3f4f6; color: #6b7280; }
+
+        .info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--ruter-gray);
+        }
+        .info-item i { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+
+        .contact-section {
+            padding-top: 1rem;
+            border-top: 1px solid #f1f5f9;
+            margin-bottom: 0.75rem;
+        }
+
+        .contact-person {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .contact-person > i {
+            width: 28px;
+            height: 28px;
+            padding: 5px;
+            background: var(--ruter-gray-light);
+            border-radius: 50%;
+            color: var(--ruter-navy);
+        }
+        .contact-person div { display: flex; flex-direction: column; }
+        .contact-name { font-weight: 600; font-size: 0.9rem; color: var(--ruter-navy); }
+        .contact-role { font-size: 0.8rem; color: var(--ruter-gray); }
+
+        .contact-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+        .contact-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.35rem 0.6rem;
+            background: #f1f5f9;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--ruter-navy);
+            text-decoration: none;
+        }
+        .contact-link:hover { background: var(--ruter-red-light); color: var(--ruter-red); }
+        .contact-link i { width: 14px; height: 14px; }
+
+        .card-links { display: flex; gap: 1rem; }
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--ruter-blue);
+            text-decoration: none;
+        }
+        .card-link:hover { color: var(--ruter-red); }
+        .card-link i { width: 14px; height: 14px; }
+
+        .sales-argument {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-top: 1px solid #fcd34d;
+        }
+        .sales-argument i { width: 18px; height: 18px; color: #b45309; flex-shrink: 0; margin-top: 2px; }
+        .sales-argument p { font-size: 0.85rem; color: #78350f; }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--ruter-gray);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 640px) {
+            .cards-container { padding: 1rem; }
+            .stats-bar { gap: 1rem; padding: 0.75rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Salgsliste Hagan/Gjelleråsen</h1>
+        <p>Rangert etter samkjøringspotensial</p>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-value">53</div>
+            <div class="stat-label">Bedrifter</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">3,856</div>
+            <div class="stat-label">Ansatte</div>
+        </div>
+        <div class="controls">
+            <span style="font-size:0.8rem;color:var(--ruter-gray)">Sorter:</span>
+            <div class="sort-group">
+                <button class="sort-btn active" onclick="sortCards('score')">Potensial</button>
+                <button class="sort-btn" onclick="sortCards('employees')">Ansatte</button>
+                <button class="sort-btn" onclick="sortCards('name')">Navn</button>
+            </div>
+            <button class="btn" onclick="toggleMap()"><i data-lucide="map"></i>Kart</button>
+            <button class="btn" onclick="showSyncModal()" style="background:#2563eb"><i data-lucide="upload-cloud"></i>Sheets</button>
+        </div>
+    </div>
+
+    <div id="sync-modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
+        <div style="background:white;padding:2rem;border-radius:12px;max-width:500px;width:90%;position:relative">
+            <span onclick="closeSyncModal()" style="position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#9ca3af">&times;</span>
+            <h2 style="margin-bottom:1rem;color:var(--ruter-navy)">Sync til Google Sheets</h2>
+            <p style="margin-bottom:1rem;color:#4b5563">Kjør denne kommandoen i terminalen:</p>
+            <div style="display:flex;gap:0.5rem;background:#f1f5f9;padding:1rem;border-radius:8px;margin-bottom:1rem">
+                <code id="sync-command" style="flex:1;font-family:monospace;font-size:0.85rem;word-break:break-all">python google_sheets.py sync "bedrifter.csv"</code>
+                <button class="btn" onclick="copyCommand()">Kopier</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="cards-container" id="cards">
+        
+        <article class="company-card" data-score="90" data-employees="764" data-name="RINGNES SUPPLY COMPANY AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#1</div>
+                    <div class="header-content">
+                        <h2 class="company-name">RINGNES SUPPLY COMPANY AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>764 ansatte</span>
+                            <span class="score-badge score-high"><i data-lucide="target"></i>90%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Bryggeriveien 2, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Produksjon av øl</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Patricia Da Costa Gomes Medina</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722069500" class="contact-link"><i data-lucide="phone"></i>+4722069500</a><a href="mailto:ringnes@ringnes.no" class="contact-link"><i data-lucide="mail"></i>ringnes@ringnes.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.ringnes.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=990666466" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Norges største bryggeri med 764 ansatte - massivt samkjøringspotensial. Del av Carlsberg-konsernet med sterke bærekraftsmål. Mange ansatte på skift som kan dele transport. Industriområde med flere potensielle samkjøringspartnere.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="80" data-employees="407" data-name="NITTEDAL KOMMUNE INSTITUSJONER">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#2</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NITTEDAL KOMMUNE INSTITUSJONER</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>407 ansatte</span>
+                            <span class="score-badge score-high"><i data-lucide="target"></i>80%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Stamveien 6, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Offentlig administrasjon tilknyttet helsestell, undervisning, kultur og annen sosial virksomhet</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Adelheid Buschmann Kristiansen</span>
+                    <span class="contact-role">Kommunedirektør</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767059000" class="contact-link"><i data-lucide="phone"></i>+4767059000</a><a href="mailto:postmottak@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>postmottak@nittedal.kommune.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=974637987" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>407 ansatte - kommunal institusjon. Offentlig arbeidsgiver med miljømål. Stor arbeidsplass med mange ansatte. Potensial for koordinert transport.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="80" data-employees="371" data-name="GARDA SIKRING AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#3</div>
+                    <div class="header-content">
+                        <h2 class="company-name">GARDA SIKRING AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>371 ansatte</span>
+                            <span class="score-badge score-high"><i data-lucide="target"></i>80%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Stamveien 8, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Produksjon av metallkonstruksjoner og deler</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Kai Even Rostad Øvregard</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4740002101" class="contact-link"><i data-lucide="phone"></i>+4740002101</a><a href="mailto:post@gardasikring.no" class="contact-link"><i data-lucide="mail"></i>post@gardasikring.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.gardasikring.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=936659128" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>371 ansatte - stor produksjonsbedrift. Produserer sikkerhetsgjerder og porter. Mange feltarbeidere som kan koordinere transport. Del av Heras Group - internasjonalt konsern med ESG-fokus.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="80" data-employees="298" data-name="DIPLOM-IS AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#4</div>
+                    <div class="header-content">
+                        <h2 class="company-name">DIPLOM-IS AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>298 ansatte</span>
+                            <span class="score-badge score-high"><i data-lucide="target"></i>80%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 10, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Produksjon av iskrem og andre spiselige isprodukter</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Martin Kjekshus</span>
+                    <span class="contact-role">Administrerende direktør</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:02001" class="contact-link"><i data-lucide="phone"></i>02001</a><a href="mailto:firmapost@diplom-is.no" class="contact-link"><i data-lucide="mail"></i>firmapost@diplom-is.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.diplom-is.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=984460198" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>298 ansatte i produksjon - mange på samme skift. Del av TINE-konsernet med sterke miljømål. Produksjonsbedrift med faste arbeidstider. Nær DVS Entreprenør og Site Service for samkjøringsnettverk.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="60" data-employees="672" data-name="WÜRTH NORGE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#5</div>
+                    <div class="header-content">
+                        <h2 class="company-name">WÜRTH NORGE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>672 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>60%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Morteveien 12, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med jernvarer, rørleggerartikler og oppvarmingsutstyr</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Gøran Mago Ramstad</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4746401500" class="contact-link"><i data-lucide="phone"></i>+4746401500</a><a href="mailto:kontakt@wuerth.no" class="contact-link"><i data-lucide="mail"></i>kontakt@wuerth.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.wuerth.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=831018682" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>672 ansatte - stor arbeidsgiver på Hagan. Tysk konsern med fokus på bærekraft. Kombinasjon av lager/logistikk og salg - ulike skiftider kan optimaliseres. Nær flere andre industribedrifter for samkjøring.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="60" data-employees="60" data-name="HOLUMSKOGEN SKOLE">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#6</div>
+                    <div class="header-content">
+                        <h2 class="company-name">HOLUMSKOGEN SKOLE</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>60 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>60%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Morteveien 19, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Ordinær grunnskoleundervisning</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Vanessa Humlekjær</span>
+                    <span class="contact-role">Rektor</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4791002734" class="contact-link"><i data-lucide="phone"></i>+4791002734</a><a href="mailto:vanessa.humlekjer@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>vanessa.humlekjer@nittedal.kommune.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.nittedal.kommune.no/enheter/nittedalsskolen/holumskogen-skole/" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=976638654" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>60 ansatte med faste arbeidstider. Offentlig arbeidsgiver - foregangsfigur for miljøtiltak. Lærere og ansatte med like arbeidstider. Nær barnehage og andre offentlige institusjoner.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="50" data-employees="31" data-name="MORTETJERN BARNEHAGE">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#7</div>
+                    <div class="header-content">
+                        <h2 class="company-name">MORTETJERN BARNEHAGE</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>31 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>50%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Ørekyteveien 1, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Førskoleundervisning og drift av barnehager</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Florian Olberg</span>
+                    <span class="contact-role">Styrer</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4747690752" class="contact-link"><i data-lucide="phone"></i>+4747690752</a><a href="mailto:florian.olberg@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>florian.olberg@nittedal.kommune.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=975301990" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>31 ansatte med faste arbeidstider. Kommunal barnehage - offentlig arbeidsgiver. Nær Holumskogen skole - mulighet for samkjøring med skoleansatte. Miljøbevisst offentlig sektor.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="45" data-employees="7" data-name="AHUS HAGAN VOKSENPSYKIATRI DPS SKYTTA">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#8</div>
+                    <div class="header-content">
+                        <h2 class="company-name">AHUS HAGAN VOKSENPSYKIATRI DPS SKYTTA</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>45%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 18, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Psykiatriske sykehustjenester for voksne</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Tove Mathiesen</span>
+                    <span class="contact-role">Psykologfaglig rådgiver (kontakt)</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722168200" class="contact-link"><i data-lucide="phone"></i>+4722168200</a><a href="mailto:Tove.Mathiesen@ahus.no" class="contact-link"><i data-lucide="mail"></i>Tove.Mathiesen@ahus.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=979593422" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>7 ansatte - psykiatrisk døgnenhet. Del av Ahus. Offentlig helsetjeneste. Faste arbeidstider/skift.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="40" data-employees="231" data-name="SITE SERVICE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#9</div>
+                    <div class="header-content">
+                        <h2 class="company-name">SITE SERVICE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>231 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>40%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 18, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Bygging av anlegg for elektrisitet og telekommunikasjon på land</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Terje Hoemsnes</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="mailto:post@siteservice.no" class="contact-link"><i data-lucide="mail"></i>post@siteservice.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=996427544" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>231 ansatte - entreprenør med mange montører i felt. Ansatte reiser til ulike prosjekter - perfekt for samkjøring. Elektro-bransjen med fokus på grønn teknologi. Samme industriområde som mange andre bedrifter.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="40" data-employees="197" data-name="VECTURA AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#10</div>
+                    <div class="header-content">
+                        <h2 class="company-name">VECTURA AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>197 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>40%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Destilleriveien 11, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Agenturhandel med nærings- og nytelsesmidler</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Ken Ove Nyhus</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767065000" class="contact-link"><i data-lucide="phone"></i>+4767065000</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=975381781" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>197 ansatte i logistikk/lager. Norges ledende logistikkselskap for vin og drikkevarer. Del av Anora-konsernet. Lagerarbeidere med faste skift - ideelt for samkjøring.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="40" data-employees="27" data-name="GA MEKNETT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#11</div>
+                    <div class="header-content">
+                        <h2 class="company-name">GA MEKNETT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>27 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>40%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Masteveien 6, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Produksjon av kraner og ventiler ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Arild Willersrud</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722646550" class="contact-link"><i data-lucide="phone"></i>+4722646550</a><a href="mailto:arvid@gassarmatur.no" class="contact-link"><i data-lucide="mail"></i>arvid@gassarmatur.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=970888160" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>27 ansatte i ventilproduksjon. Produserer ventiler og gassarmatur. Produksjonsbedrift med faste skift. Del av Willersrud Holding.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="35" data-employees="18" data-name="SØRAN AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#12</div>
+                    <div class="header-content">
+                        <h2 class="company-name">SØRAN AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>18 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>35%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 13, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Produksjon av andre metallvarer ikke nevnt annet sted</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Arild Frøberg</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767064060" class="contact-link"><i data-lucide="phone"></i>+4767064060</a><a href="mailto:post@soran.no" class="contact-link"><i data-lucide="mail"></i>post@soran.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=817967272" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>18 ansatte - tak og ventilasjon. Grunnlagt 1965 - lang historie. Komplett løsninger for tak og ventilasjon. Service og vedlikehold - feltarbeidere.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="35" data-employees="15" data-name="ROSMEK AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#13</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ROSMEK AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>15 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>35%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 9, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Produksjon av metallkonstruksjoner og deler</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Truls Enghaugen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767070993" class="contact-link"><i data-lucide="phone"></i>+4767070993</a><a href="mailto:post@rosmek.no" class="contact-link"><i data-lucide="mail"></i>post@rosmek.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://rosmek.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=986680829" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>15 ansatte i metallproduksjon. Produserer metallkonstruksjoner. Produksjonsbedrift med faste arbeidstider. Nær flere verksteder.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="35" data-employees="8" data-name="SI TRANSPORT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#14</div>
+                    <div class="header-content">
+                        <h2 class="company-name">SI TRANSPORT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>35%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Karushøgda 29, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Andre post- og budtjenester</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Saqeb Iqbal</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4745699337" class="contact-link"><i data-lucide="phone"></i>+4745699337</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=821196302" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>8 ansatte i transport/bud. Ansatte kjører til ulike destinasjoner. Budtjeneste - koordinert logistikk relevant. Lokal transportør.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="35" data-employees="8" data-name="NORDISK RENHOLD AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#15</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORDISK RENHOLD AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>35%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Karushøgda 42A, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Rengjøring av bygninger</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Zarah Khan</span>
+                    <span class="contact-role">Styrets leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=925238392" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Ansatte reiser til ulike oppdrag - koordinert transport relevant. Rengjøringsbransjen. Lokalt forankret selskap. Vekstbransje.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="35" data-employees="5" data-name="OSLO TRANSPORT &amp; SPEDISJON AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#16</div>
+                    <div class="header-content">
+                        <h2 class="company-name">OSLO TRANSPORT &amp; SPEDISJON AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>35%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 12, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Godstransport på vei</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Rune Steen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767073070" class="contact-link"><i data-lucide="phone"></i>+4767073070</a><a href="mailto:post@otrans.no" class="contact-link"><i data-lucide="mail"></i>post@otrans.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=993575968" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>5 ansatte - transport/spedisjon. Del av Helge R Olsen-konsernet. Godstransport. Ansatte på vei - koordinering relevant.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="30" data-employees="101" data-name="MEDIEHUSET ANDVORD AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#17</div>
+                    <div class="header-content">
+                        <h2 class="company-name">MEDIEHUSET ANDVORD AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>101 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 20B, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Trykking ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Nils Jacob Førli</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722726600" class="contact-link"><i data-lucide="phone"></i>+4722726600</a><a href="mailto:ag@andvord.no" class="contact-link"><i data-lucide="mail"></i>ag@andvord.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=910235915" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>101 ansatte i grafisk produksjon. ISO 9001 og 27001 sertifisert - fokus på kvalitet og bærekraft. Trykkeribransjen med faste arbeidstider. Nær flere industribedrifter på Hagan.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="30" data-employees="57" data-name="KALMAR NORWAY AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#18</div>
+                    <div class="header-content">
+                        <h2 class="company-name">KALMAR NORWAY AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>57 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Carl Bergersens vei 5, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Bredo Steen-Gundersen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=914287987" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>57 ansatte i maskinutstyr. Del av Kalmar Oyj - finsk konsern med bærekraftsfokus. Leverer trucker og logistikkløsninger. Kombinasjon av service og salg.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="20" data-employees="73" data-name="DVS ENTREPRENØR AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#19</div>
+                    <div class="header-content">
+                        <h2 class="company-name">DVS ENTREPRENØR AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>73 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 6, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Snekkerarbeid</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Leif Erik Mortensen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722105551" class="contact-link"><i data-lucide="phone"></i>+4722105551</a><a href="mailto:post@dvs.no" class="contact-link"><i data-lucide="mail"></i>post@dvs.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.dvs.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=979677863" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>73 ansatte - byggentreprenør med prosjektarbeidere. Del av Fasadgruppen - nordisk konsern med miljøfokus. Snekkerarbeid på byggeplasser - koordinert transport til prosjekter. Sentral godkjenning.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="20" data-employees="51" data-name="KARLSEN &amp; NORDSETH ENTREPRENØR AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#20</div>
+                    <div class="header-content">
+                        <h2 class="company-name">KARLSEN &amp; NORDSETH ENTREPRENØR AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>51 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Gjelleråsveien 2, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Oppføring av bygninger</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Line Christin Karlsen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767073830" class="contact-link"><i data-lucide="phone"></i>+4767073830</a><a href="mailto:post@karlsen-nordseth.no" class="contact-link"><i data-lucide="mail"></i>post@karlsen-nordseth.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=985214034" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>51 ansatte - spesialist på antikvarisk rehabilitering. Håndverkere som reiser til prosjekter - samkjøringspotensial. Familieeid bedrift med lokal forankring. Byggentreprenør i vekst.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="41" data-name="DIRECT HOUSE OSLO AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#21</div>
+                    <div class="header-content">
+                        <h2 class="company-name">DIRECT HOUSE OSLO AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>41 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 2, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Pakkevirksomhet</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Geir Sture</span>
+                    <span class="contact-role">Daglig leder (morselskap)</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4746870000" class="contact-link"><i data-lucide="phone"></i>+4746870000</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=856818462" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>41 ansatte i pakking/logistikk. Del av Direct House-konsernet. Lagerarbeid med faste skift. Industriområde med flere samkjøringsmuligheter.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="36" data-name="ELLCO ETIKETT TRYKK AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#22</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ELLCO ETIKETT TRYKK AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>36 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Morteveien 4, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Trykking ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Christian Egedius</span>
+                    <span class="contact-role">Daglig leder/Styrets leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767062040" class="contact-link"><i data-lucide="phone"></i>+4767062040</a><a href="mailto:mail@ellco.no" class="contact-link"><i data-lucide="mail"></i>mail@ellco.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.ellco.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=936584462" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>36 ansatte i etiketttrykking. Familiebedrift siden 1985. Produksjonsbedrift med faste arbeidstider. Moderne produksjonsutstyr - fremtidsrettet bedrift.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="29" data-name="UNILAMP NORDEN AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#23</div>
+                    <div class="header-content">
+                        <h2 class="company-name">UNILAMP NORDEN AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>29 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 11, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med husholdnings-, kontor- og butikkmøbler, gulvtepper og belysningsutstyr</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Karl Mario Seland</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4798499849" class="contact-link"><i data-lucide="phone"></i>+4798499849</a><a href="mailto:karl.mario.seland@unilamp.no" class="contact-link"><i data-lucide="mail"></i>karl.mario.seland@unilamp.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.unilamp.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=992846070" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>29 ansatte i belysningsbransjen. Nordisk selskap med kontor og lager. LED-belysning - grønn teknologi. Sentralt i industriområdet.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="28" data-name="VARIA MEK VERKSTED AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#24</div>
+                    <div class="header-content">
+                        <h2 class="company-name">VARIA MEK VERKSTED AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>28 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 7, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Bearbeiding av metaller</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Tommy Freitag</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767061321" class="contact-link"><i data-lucide="phone"></i>+4767061321</a><a href="mailto:varia.con@varia.no" class="contact-link"><i data-lucide="mail"></i>varia.con@varia.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.varia.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=980409821" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>28 ansatte i mekanisk verksted. 1500 kvm verksted + avdeling på Furuset. Plate- og mekanisk arbeid - faste arbeidstider. Lang erfaring og dyktige fagarbeidere.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="25" data-name="OSLOFINÉR AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#25</div>
+                    <div class="header-content">
+                        <h2 class="company-name">OSLOFINÉR AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>25 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Destilleriveien 5, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med tømmer, trelast, byggevarer og sanitærutstyr</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Henriette Bohman Lillebekk</span>
+                    <span class="contact-role">Daglig leder/Styrets leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4723006160" class="contact-link"><i data-lucide="phone"></i>+4723006160</a><a href="mailto:post@oslofiner.no" class="contact-link"><i data-lucide="mail"></i>post@oslofiner.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.oslofiner.no/" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=918866949" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>25 ansatte i trelastbransjen. Tradisjonell leverandør til treindustrien. Engroshandel med faste arbeidstider. Nær flere industribedrifter.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="23" data-name="MOREK AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#26</div>
+                    <div class="header-content">
+                        <h2 class="company-name">MOREK AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>23 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 25, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med deler og utstyr for motorvogner</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Henrik Fagerland</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767063500" class="contact-link"><i data-lucide="phone"></i>+4767063500</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.morek.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=963447086" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>23 ansatte - bildeler og rekvisita. Flere avdelinger i Norge. Engroshandel med kombinasjon av lager og salg. Del av MH Holding.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="10" data-employees="22" data-name="PÅL KLEVEN DAGLIGVARE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#27</div>
+                    <div class="header-content">
+                        <h2 class="company-name">PÅL KLEVEN DAGLIGVARE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>22 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Carl Bergersens vei 3, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med bredt vareutvalg med hovedvekt på nærings- og nytelsesmidler</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Pål Arve Kleven</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=820732022" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>22 ansatte - REMA 1000 Gjelleråsen. Dagligvarebutikk med skiftarbeid. Del av REMA-kjeden. Lokal arbeidsgiver med mange ansatte.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="19" data-name="ABSOLUTT RENT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#28</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ABSOLUTT RENT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>19 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 14, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Rengjøring av bygninger</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Flemming Jørgensen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=933001466" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>19 ansatte i rengjøring. Ansatte reiser til ulike oppdrag - perfekt for koordinert transport. Rengjøringsbransjen med varierte arbeidstider. Lokalt forankret.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="18" data-name="BLACK PEPPER RESTAURANT OG BAR BERNARD">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#29</div>
+                    <div class="header-content">
+                        <h2 class="company-name">BLACK PEPPER RESTAURANT OG BAR BERNARD</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>18 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brådalsstubben 20, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Drift av restauranter</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <span class="contact-role">Styreleder/Eier</span>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=917773475" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>18 ansatte i restaurant. Indisk restaurant - skiftarbeid. Servicebransjen med kvelds- og helgearbeid. Lokalt serveringssted.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="16" data-name="AS SOLREGN">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#30</div>
+                    <div class="header-content">
+                        <h2 class="company-name">AS SOLREGN</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>16 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 5, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Regnskapsføring og bokføring</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Nina Sollie Anderssen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767067300" class="contact-link"><i data-lucide="phone"></i>+4767067300</a><a href="mailto:post@solregn.no" class="contact-link"><i data-lucide="mail"></i>post@solregn.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.solregn.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=956623103" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>16 ansatte i regnskap. Autorisert regnskapsfører. Kontorarbeid med faste arbeidstider. Sentralt i industriområdet.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="15" data-name="VVS FINANS AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#31</div>
+                    <div class="header-content">
+                        <h2 class="company-name">VVS FINANS AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>15 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 16, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Regnskapsføring og bokføring</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Per-Henrik Ruud</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=950836792" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>15 ansatte i regnskap. Spesialisert på VVS-bransjen. Kontorarbeid med faste tider. Del av Abra Invest.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="15" data-name="ØVERSTAD HANDEL AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#32</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ØVERSTAD HANDEL AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>15 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Morteveien 1, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med bredt vareutvalg med hovedvekt på nærings- og nytelsesmidler</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <span class="contact-role">KIWI-kjøpmann</span>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=935378087" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>15 ansatte - KIWI dagligvare. Skiftarbeid i butikk. Del av NorgesGruppen. Lokal arbeidsgiver.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="14" data-name="NORDIC TOOLS AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#33</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORDIC TOOLS AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>14 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 26, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med tømmer, trelast, byggevarer og sanitærutstyr</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Geir Hellerud</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722304070" class="contact-link"><i data-lucide="phone"></i>+4722304070</a><a href="mailto:geir.hellerud@nordictools.no" class="contact-link"><i data-lucide="mail"></i>geir.hellerud@nordictools.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=998877393" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>14 ansatte i verktøy/byggevarer. Engroshandel med faste arbeidstider. Del av konsern med 7 selskaper. Sentralt i industriområdet.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="12" data-name="EMPACK NOR AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#34</div>
+                    <div class="header-content">
+                        <h2 class="company-name">EMPACK NOR AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 8, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Thomas Dahl</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4723373737" class="contact-link"><i data-lucide="phone"></i>+4723373737</a><a href="mailto:www@empack.no" class="contact-link"><i data-lucide="mail"></i>www@empack.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.empack.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=976547187" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>12 ansatte - emballasjemaskiner. Engroshandel med service. Kombinasjon av salg og teknikk. Etablert 1996.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="12" data-name="KARL STORZ ENDOSKOPI NORGE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#35</div>
+                    <div class="header-content">
+                        <h2 class="company-name">KARL STORZ ENDOSKOPI NORGE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Stamveien 1, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med apotekvarer og medisinske varer</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Anders Engøy</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4763805600" class="contact-link"><i data-lucide="phone"></i>+4763805600</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.karlstorz.com" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993346292" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>12 ansatte - medisinsk utstyr. Del av tysk konsern. Endoskopi og kirurgisk utstyr. Høyteknologisk bransje.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="12" data-name="SELMATEC AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#36</div>
+                    <div class="header-content">
+                        <h2 class="company-name">SELMATEC AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 28, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Uspesifisert engroshandel</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Bøye Einang</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4763928400" class="contact-link"><i data-lucide="phone"></i>+4763928400</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=984580312" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>12 ansatte - sikkerhetsutstyr. Selger metalldetektor og røntgen. Del av Ege-Gruppen med 116 selskaper. Kontorer i Norden.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="10" data-name="UNIBAK AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#37</div>
+                    <div class="header-content">
+                        <h2 class="company-name">UNIBAK AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>10 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Masteveien 1, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Torstein Aase Johnsen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767073000" class="contact-link"><i data-lucide="phone"></i>+4767073000</a><a href="mailto:gunnar.clifford@unibak.no" class="contact-link"><i data-lucide="mail"></i>gunnar.clifford@unibak.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.unibak.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=956786282" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>10 ansatte - bakeriutstyr. Engroshandel til bakeribransjen. Kombinasjon av salg og service. Etablert 1990.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="9" data-name="CIMBERIO AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#38</div>
+                    <div class="header-content">
+                        <h2 class="company-name">CIMBERIO AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>9 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 15, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med jernvarer, rørleggerartikler og oppvarmingsutstyr</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Per Erik Raasok</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722707910" class="contact-link"><i data-lucide="phone"></i>+4722707910</a><a href="mailto:info@cimberio.no" class="contact-link"><i data-lucide="mail"></i>info@cimberio.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=960417151" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>9 ansatte - ventiler og VVS. Del av italiensk konsern. Spesialist på ventiler for oppvarming/kjøling. Etablert 1991.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="9" data-name="OSLO TRYKKLUFT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#39</div>
+                    <div class="header-content">
+                        <h2 class="company-name">OSLO TRYKKLUFT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>9 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 17, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr til bergverksdrift, olje- og gassutvinning og bygge- og anleggsvirksomhet</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Unni Gulbrandsen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722787300" class="contact-link"><i data-lucide="phone"></i>+4722787300</a><a href="mailto:kontakt@oslotrykkluft.no" class="contact-link"><i data-lucide="mail"></i>kontakt@oslotrykkluft.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.oslotrykkluft.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=995717794" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>9 ansatte - kompressorer og trykkluft. Familiebedrift siden 1991. Utleie, salg og service. Nær Skytta industriområde.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="8" data-name="DIA PROFF NORGE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#40</div>
+                    <div class="header-content">
+                        <h2 class="company-name">DIA PROFF NORGE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Masteveien 8, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskinverktøy</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Carl Ronny Olsen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767067330" class="contact-link"><i data-lucide="phone"></i>+4767067330</a><a href="mailto:post@diaproff.no" class="contact-link"><i data-lucide="mail"></i>post@diaproff.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.diaproff.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=987338830" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>8 ansatte - diamantverktøy. Skandinavias største importør. Spesialmaskiner for betong/asfalt. Del av CRO Invest.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="8" data-name="SENEVI DRIFT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#41</div>
+                    <div class="header-content">
+                        <h2 class="company-name">SENEVI DRIFT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Carl Bergersens vei 1, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med drivstoff til motorvogner</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <span class="contact-role">Bensinstasjon</span>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=925505803" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>8 ansatte - bensinstasjon. Skiftarbeid. Detaljhandel med drivstoff. Lokal servicebedrift.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="8" data-name="VENDCOMATIC AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#42</div>
+                    <div class="header-content">
+                        <h2 class="company-name">VENDCOMATIC AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Masteveien 10, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Lotteri- og gamblingvirksomhet</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Rune Nilsen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4746831000" class="contact-link"><i data-lucide="phone"></i>+4746831000</a><a href="mailto:vidar.nilsen@vendcomatic.no" class="contact-link"><i data-lucide="mail"></i>vidar.nilsen@vendcomatic.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=929514351" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>8 ansatte - spilleautomater. Etablert 1978. Service på automater - feltarbeidere. Del av Gruvi Games.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="7" data-name="LOGISNEXT NORWAY AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#43</div>
+                    <div class="header-content">
+                        <h2 class="company-name">LOGISNEXT NORWAY AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 2B, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Stig Jaltved</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4723372630" class="contact-link"><i data-lucide="phone"></i>+4723372630</a><a href="mailto:info-no@unicarrierseurope.com" class="contact-link"><i data-lucide="mail"></i>info-no@unicarrierseurope.com</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=982711339" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>7 ansatte - trucker og lagerløsninger. Del av japansk Mitsubishi-konsern. Service og salg. Nær Diplom-Is og DVS.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="7" data-name="NORWEGIAN MOBILITY GROUP AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#44</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORWEGIAN MOBILITY GROUP AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Masteveien 4, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med motorvogner</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Dag Asbjørnsen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=982179289" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>7 ansatte - bilforhandler. Over 1,2 mrd i omsetning. Del av konsern. Salg og service av biler.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="7" data-name="UNITEAM PROJECT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#45</div>
+                    <div class="header-content">
+                        <h2 class="company-name">UNITEAM PROJECT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brennaveien 14A, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Oppføring av bygninger</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Knut Erik Lindseth</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=929047966" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>7 ansatte - modulbygg. Del av Algeco Norway. Prosjektbasert arbeid. Byggentreprenør.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="7" data-name="GLOMMEN A/S">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#46</div>
+                    <div class="header-content">
+                        <h2 class="company-name">GLOMMEN A/S</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 12, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med informasjons- og kommunikasjonsteknologiutstyr</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Bjørn Henning Glommen</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722803400" class="contact-link"><i data-lucide="phone"></i>+4722803400</a><a href="mailto:post@glommen.as" class="contact-link"><i data-lucide="mail"></i>post@glommen.as</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.glommen.as" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=946999148" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>7 ansatte - IT-utstyr. Engroshandel med kontormaskiner. Etablert 1988. Sentralt i industriområdet.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="6" data-name="INTERKIT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#47</div>
+                    <div class="header-content">
+                        <h2 class="company-name">INTERKIT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>6 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 20, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Rolf Morten Arnestad</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="mailto:interkit@interkit.no" class="contact-link"><i data-lucide="mail"></i>interkit@interkit.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.interkit.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=994316486" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>6 ansatte - industrielt utstyr. Engroshandel med maskiner. Del av Rotek Holding. Sentralt i industriområdet.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="6" data-name="NOR CAMP AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#48</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NOR CAMP AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>6 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 1, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med motorvogner</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Andre Sverre Øvstegård</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767061313" class="contact-link"><i data-lucide="phone"></i>+4767061313</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=926144405" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>6 ansatte - campingvogner. Salg av bobiler og campingvogner. Del av Skytta Nor Holding. Sesongbasert virksomhet.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="6" data-name="POSTROM MASKINER AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#49</div>
+                    <div class="header-content">
+                        <h2 class="company-name">POSTROM MASKINER AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>6 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Industriveien 24, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Engroshandel med maskiner og utstyr ellers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Tom Erik Harnes</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4723338833" class="contact-link"><i data-lucide="phone"></i>+4723338833</a><a href="mailto:info@postrom.no" class="contact-link"><i data-lucide="mail"></i>info@postrom.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.postrom.no" target="_blank" class="card-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=952961942" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>6 ansatte - posthåndtering. Importør av postmaskiner. Norskeid selskap. Spesialisert nisje.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="5" data-name="NORGESMARKISER AMICO AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#50</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORGESMARKISER AMICO AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Stamveien 7, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med tekstiler og utstyrsvarer</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Hege Anita Normann</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"><a href="tel:+4767062210" class="contact-link"><i data-lucide="phone"></i>+4767062210</a><a href="mailto:hege@norgesmarkiser.no" class="contact-link"><i data-lucide="mail"></i>hege@norgesmarkiser.no</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=959199299" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>5 ansatte - markiser. Ledende leverandør siden 1969. Amico-markiser. Montører i felt.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="5" data-name="CONOR SKANDINAVIA AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#51</div>
+                    <div class="header-content">
+                        <h2 class="company-name">CONOR SKANDINAVIA AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Morteveien 6, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Reklamebyråvirksomhet</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <span class="contact-role">Daglig leder</span>
+            </div>
+                        <div class="contact-links"><a href="tel:+4722557580" class="contact-link"><i data-lucide="phone"></i>+4722557580</a></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=993356085" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>5 ansatte - reklamebyrå. Markedsføring og kommunikasjon. Kontorarbeid med faste tider.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="5" data-name="GRAND AUTO AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#52</div>
+                    <div class="header-content">
+                        <h2 class="company-name">GRAND AUTO AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Brådalsstubben 18, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Detaljhandel med motorvogner</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Imran Bahadar Khan</span>
+                    <span class="contact-role">Daglig leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=913979648" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>5 ansatte - bilforhandler. Del av Grand Gruppen. Salg og service av biler. Lokalt bilverksted.</p>
+        </div>
+        </article>
+        <article class="company-card" data-score="5" data-employees="5" data-name="UTSIKTEN SELSKAPSLOKALE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#53</div>
+                    <div class="header-content">
+                        <h2 class="company-name">UTSIKTEN SELSKAPSLOKALE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i data-lucide="map-pin"></i>
+                            <span>Masteveien 3, 1481 HAGAN</span>
+                        </div>
+                        <div class="info-item">
+                            <i data-lucide="briefcase"></i>
+                            <span>Utleie av egen eller leid fast eiendom</span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-section">
+                        
+            <div class="contact-person">
+                <i data-lucide="user"></i>
+                <div>
+                    <span class="contact-name">Satkunamaran Veluppillai</span>
+                    <span class="contact-role">Daglig leder/Styrets leder</span>
+                </div>
+            </div>
+                        <div class="contact-links"></div>
+                    </div>
+                    
+                    <div class="card-links"><a href="https://www.proff.no/bransjesøk?q=918562796" target="_blank" class="card-link"><i data-lucide="external-link"></i>Proff</a></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>5 ansatte - selskapslokale. Utleie til arrangementer. Servicebransje med varierte tider.</p>
+        </div>
+        </article>
+    </div>
+
+    <div class="footer">
+        Generert 2026-02-03 10:38 · Data fra Brønnøysundregistrene<br>
+        <small>Score basert på: ansatte, bransje (skiftarbeid), offentlig sektor, konsern</small>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        lucide.createIcons();
+
+        const markers = [{"lat": 59.99155188111619, "lon": 10.934371053812008, "name": "RINGNES SUPPLY COMPANY AS", "employees": "764", "address": "Bryggeriveien 2, 1481 HAGAN", "score": 90}, {"lat": 59.98384652507307, "lon": 10.943837286030682, "name": "NITTEDAL KOMMUNE INSTITUSJONER", "employees": "407", "address": "Stamveien 6, 1481 HAGAN", "score": 80}, {"lat": 59.98477371543494, "lon": 10.944551314029313, "name": "GARDA SIKRING AS", "employees": "371", "address": "Stamveien 8, 1481 HAGAN", "score": 80}, {"lat": 59.99328348691529, "lon": 10.918062846472019, "name": "DIPLOM-IS AS", "employees": "298", "address": "Brennaveien 10, 1481 HAGAN", "score": 80}, {"lat": 59.987197743716436, "lon": 10.942183830995567, "name": "W\u00dcRTH NORGE AS", "employees": "672", "address": "Morteveien 12, 1481 HAGAN", "score": 60}, {"lat": 59.984295768153615, "lon": 10.9379627362556, "name": "HOLUMSKOGEN SKOLE", "employees": "60", "address": "Morteveien 19, 1481 HAGAN", "score": 60}, {"lat": 59.98332515294052, "lon": 10.93690042525635, "name": "MORTETJERN BARNEHAGE", "employees": "31", "address": "\u00d8rekyteveien 1, 1481 HAGAN", "score": 50}, {"lat": 59.99172201974707, "lon": 10.912830463132643, "name": "AHUS HAGAN VOKSENPSYKIATRI DPS SKYTTA", "employees": "7", "address": "Brennaveien 18, 1481 HAGAN", "score": 45}, {"lat": 59.99151644900455, "lon": 10.918950223472876, "name": "SITE SERVICE AS", "employees": "231", "address": "Industriveien 18, 1481 HAGAN", "score": 40}, {"lat": 59.98883033495629, "lon": 10.947691808453301, "name": "VECTURA AS", "employees": "197", "address": "Destilleriveien 11, 1481 HAGAN", "score": 40}, {"lat": 59.98943742728863, "lon": 10.916768151186313, "name": "GA MEKNETT AS", "employees": "27", "address": "Masteveien 6, 1481 HAGAN", "score": 40}, {"lat": 59.98962230013365, "lon": 10.912691328128705, "name": "S\u00d8RAN AS", "employees": "18", "address": "Industriveien 13, 1481 HAGAN", "score": 35}, {"lat": 59.990158421592355, "lon": 10.911519306424971, "name": "ROSMEK AS", "employees": "15", "address": "Industriveien 9, 1481 HAGAN", "score": 35}, {"lat": 59.98610806782095, "lon": 10.931728316238965, "name": "SI TRANSPORT AS", "employees": "8", "address": "Karush\u00f8gda 29, 1481 HAGAN", "score": 35}, {"lat": 59.98541848742407, "lon": 10.93226532521991, "name": "NORDISK RENHOLD AS", "employees": "8", "address": "Karush\u00f8gda 42A, 1481 HAGAN", "score": 35}, {"lat": 59.992812777202715, "lon": 10.915654566848248, "name": "OSLO TRANSPORT & SPEDISJON AS", "employees": "5", "address": "Brennaveien 12, 1481 HAGAN", "score": 35}, {"lat": 59.989844585762555, "lon": 10.907881579878579, "name": "MEDIEHUSET ANDVORD AS", "employees": "101", "address": "Brennaveien 20B, 1481 HAGAN", "score": 30}, {"lat": 59.98411485549067, "lon": 10.927683028437842, "name": "KALMAR NORWAY AS", "employees": "57", "address": "Carl Bergersens vei 5, 1481 HAGAN", "score": 30}, {"lat": 59.99347392298412, "lon": 10.922075806463774, "name": "DVS ENTREPREN\u00d8R AS", "employees": "73", "address": "Brennaveien 6, 1481 HAGAN", "score": 20}, {"lat": 59.988555977547726, "lon": 10.932869556828923, "name": "KARLSEN & NORDSETH ENTREPREN\u00d8R AS", "employees": "51", "address": "Gjeller\u00e5sveien 2, 1481 HAGAN", "score": 20}, {"lat": 59.990840388793956, "lon": 10.911564026182761, "name": "DIRECT HOUSE OSLO AS", "employees": "41", "address": "Industriveien 2, 1481 HAGAN", "score": 10}, {"lat": 59.98790645039892, "lon": 10.93955425597106, "name": "ELLCO ETIKETT TRYKK AS", "employees": "36", "address": "Morteveien 4, 1481 HAGAN", "score": 10}, {"lat": 59.98977652675454, "lon": 10.911965191417346, "name": "UNILAMP NORDEN AS", "employees": "29", "address": "Industriveien 11, 1481 HAGAN", "score": 10}, {"lat": 59.989628216992074, "lon": 10.911042321856998, "name": "VARIA MEK VERKSTED AS", "employees": "28", "address": "Industriveien 7, 1481 HAGAN", "score": 10}, {"lat": 59.99144119952011, "lon": 10.939710962440591, "name": "OSLOFIN\u00c9R AS", "employees": "25", "address": "Destilleriveien 5, 1481 HAGAN", "score": 10}, {"lat": 59.990328981375704, "lon": 10.9233993417645, "name": "MOREK AS", "employees": "23", "address": "Industriveien 25, 1481 HAGAN", "score": 10}, {"lat": 59.984499017955834, "lon": 10.928008304346914, "name": "P\u00c5L KLEVEN DAGLIGVARE AS", "employees": "22", "address": "Carl Bergersens vei 3, 1481 HAGAN", "score": 10}, {"lat": 59.990601607969786, "lon": 10.917624336977225, "name": "ABSOLUTT RENT AS", "employees": "19", "address": "Industriveien 14, 1481 HAGAN", "score": 5}, {"lat": 59.98482637532588, "lon": 10.926380023674819, "name": "BLACK PEPPER RESTAURANT OG BAR BERNARD", "employees": "18", "address": "Br\u00e5dalsstubben 20, 1481 HAGAN", "score": 5}, {"lat": 59.99032416282752, "lon": 10.910741825406822, "name": "AS SOLREGN", "employees": "16", "address": "Industriveien 5, 1481 HAGAN", "score": 5}, {"lat": 59.99064718549029, "lon": 10.918752870492407, "name": "VVS FINANS AS", "employees": "15", "address": "Industriveien 16, 1481 HAGAN", "score": 5}, {"lat": 59.98808570154765, "lon": 10.936766342996375, "name": "\u00d8VERSTAD HANDEL AS", "employees": "15", "address": "Morteveien 1, 1481 HAGAN", "score": 5}, {"lat": 59.991315791797696, "lon": 10.922309189340602, "name": "NORDIC TOOLS AS", "employees": "14", "address": "Industriveien 26, 1481 HAGAN", "score": 5}, {"lat": 59.99043418201735, "lon": 10.912634208648486, "name": "EMPACK NOR AS", "employees": "12", "address": "Industriveien 8, 1481 HAGAN", "score": 5}, {"lat": 59.9835464523142, "lon": 10.939446095109513, "name": "KARL STORZ ENDOSKOPI NORGE AS", "employees": "12", "address": "Stamveien 1, 1481 HAGAN", "score": 5}, {"lat": 59.990579309089824, "lon": 10.9248965404718, "name": "SELMATEC AS", "employees": "12", "address": "Industriveien 28, 1481 HAGAN", "score": 5}, {"lat": 59.990159528205645, "lon": 10.917760105473084, "name": "UNIBAK AS", "employees": "10", "address": "Masteveien 1, 1481 HAGAN", "score": 5}, {"lat": 59.98939668102479, "lon": 10.914004945963189, "name": "CIMBERIO AS", "employees": "9", "address": "Industriveien 15, 1481 HAGAN", "score": 5}, {"lat": 59.98997391567382, "lon": 10.915078105484449, "name": "OSLO TRYKKLUFT AS", "employees": "9", "address": "Industriveien 17, 1481 HAGAN", "score": 5}, {"lat": 59.98938071326875, "lon": 10.915725070885793, "name": "DIA PROFF NORGE AS", "employees": "8", "address": "Masteveien 8, 1481 HAGAN", "score": 5}, {"lat": 59.98490117237849, "lon": 10.928270103924431, "name": "SENEVI DRIFT AS", "employees": "8", "address": "Carl Bergersens vei 1, 1481 HAGAN", "score": 5}, {"lat": 59.989331406481746, "lon": 10.914789987753158, "name": "VENDCOMATIC AS", "employees": "8", "address": "Masteveien 10, 1481 HAGAN", "score": 5}, {"lat": 59.99315758274214, "lon": 10.922828430099086, "name": "LOGISNEXT NORWAY AS", "employees": "7", "address": "Brennaveien 2B, 1481 HAGAN", "score": 5}, {"lat": 59.98953081065779, "lon": 10.917759574602854, "name": "NORWEGIAN MOBILITY GROUP AS", "employees": "7", "address": "Masteveien 4, 1481 HAGAN", "score": 5}, {"lat": 59.99162156332648, "lon": 10.915175127318781, "name": "UNITEAM PROJECT AS", "employees": "7", "address": "Brennaveien 14A, 1481 HAGAN", "score": 5}, {"lat": 59.990386349731445, "lon": 10.915747354264266, "name": "GLOMMEN A/S", "employees": "7", "address": "Industriveien 12, 1481 HAGAN", "score": 5}, {"lat": 59.9918601671965, "lon": 10.920637521526904, "name": "INTERKIT AS", "employees": "6", "address": "Industriveien 20, 1481 HAGAN", "score": 5}, {"lat": 59.99092860281035, "lon": 10.910061337478874, "name": "NOR CAMP AS", "employees": "6", "address": "Industriveien 1, 1481 HAGAN", "score": 5}, {"lat": 59.99085050916201, "lon": 10.920274215110599, "name": "POSTROM MASKINER AS", "employees": "6", "address": "Industriveien 24, 1481 HAGAN", "score": 5}, {"lat": 59.98387445756011, "lon": 10.944624028293678, "name": "NORGESMARKISER AMICO AS", "employees": "5", "address": "Stamveien 7, 1481 HAGAN", "score": 5}, {"lat": 59.98793564990424, "lon": 10.940378810830692, "name": "CONOR SKANDINAVIA AS", "employees": "5", "address": "Morteveien 6, 1481 HAGAN", "score": 5}, {"lat": 59.98489680895818, "lon": 10.927031217614095, "name": "GRAND AUTO AS", "employees": "5", "address": "Br\u00e5dalsstubben 18, 1481 HAGAN", "score": 5}, {"lat": 59.989800683693005, "lon": 10.915874845105416, "name": "UTSIKTEN SELSKAPSLOKALE AS", "employees": "5", "address": "Masteveien 3, 1481 HAGAN", "score": 5}];
+        let map = null;
+
+        function toggleMap() {
+            const mapEl = document.getElementById('map');
+            if (mapEl.classList.contains('visible')) {
+                mapEl.classList.remove('visible');
+            } else {
+                mapEl.classList.add('visible');
+                if (!map) initMap();
+                else map.invalidateSize();
+            }
+        }
+
+        function initMap() {
+            const bounds = markers.reduce((b, m) => [[Math.min(b[0][0], m.lat), Math.min(b[0][1], m.lon)], [Math.max(b[1][0], m.lat), Math.max(b[1][1], m.lon)]], [[90, 180], [-90, -180]]);
+            map = L.map('map').fitBounds(bounds, { padding: [20, 20] });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            markers.forEach(m => {
+                L.circleMarker([m.lat, m.lon], {
+                    radius: Math.min(Math.max(Math.sqrt(m.employees || 20) * 2, 5), 20),
+                    fillColor: '#E60000', color: '#fff', weight: 2, fillOpacity: 0.7
+                }).addTo(map).bindPopup(`<strong>${m.name}</strong><br>${m.employees} ansatte<br>Score: ${m.score}%`);
+            });
+        }
+
+        function sortCards(by) {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const container = document.getElementById('cards');
+            const cards = Array.from(container.children);
+            
+            cards.sort((a, b) => {
+                if (by === 'score') return parseInt(b.dataset.score) - parseInt(a.dataset.score);
+                if (by === 'employees') return parseInt(b.dataset.employees) - parseInt(a.dataset.employees);
+                return a.dataset.name.localeCompare(b.dataset.name, 'no');
+            });
+            
+            cards.forEach((card, i) => {
+                card.querySelector('.rank-badge').textContent = '#' + (i + 1);
+                container.appendChild(card);
+            });
+        }
+
+        function showSyncModal() {
+            document.getElementById('sync-modal').style.display = 'flex';
+        }
+
+        function closeSyncModal() {
+            document.getElementById('sync-modal').style.display = 'none';
+        }
+
+        function copyCommand() {
+            navigator.clipboard.writeText(document.getElementById('sync-command').textContent);
+        }
+
+        document.getElementById('sync-modal').addEventListener('click', e => {
+            if (e.target.id === 'sync-modal') closeSyncModal();
+        });
+    </script>
+</body>
+</html>
