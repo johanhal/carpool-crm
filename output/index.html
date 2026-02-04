@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carpool CRM</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --ruter-red: #E60000;
+            --ruter-red-dark: #A20000;
+            --ruter-red-light: #FDEBEB;
+            --ruter-navy: #313663;
+            --ruter-blue: #002B79;
+            --ruter-gray: #6D7196;
+            --ruter-gray-light: #F8F8F8;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--ruter-gray-light);
+            color: var(--ruter-navy);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--ruter-red) 0%, var(--ruter-red-dark) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; font-size: 1.1rem; }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ruter-gray);
+            margin-bottom: 1rem;
+        }
+
+        .area-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .area-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .area-card:hover {
+            border-color: var(--ruter-red);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.15);
+        }
+
+        .area-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .area-card h2 i {
+            color: var(--ruter-red);
+        }
+
+        .area-card .description {
+            color: var(--ruter-gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .area-card .stats {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .area-card .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--ruter-red);
+        }
+
+        .area-card .stat-label {
+            font-size: 0.7rem;
+            color: var(--ruter-gray);
+            text-transform: uppercase;
+        }
+
+        .area-card.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--ruter-red-light);
+            color: var(--ruter-red);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-left: auto;
+        }
+
+        .badge.wip {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login overlay -->
+    <div id="login-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#E60000 0%,#A20000 100%);display:flex;align-items:center;justify-content:center;z-index:9999">
+        <div style="background:white;padding:2.5rem;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);text-align:center;max-width:400px;width:90%">
+            <div style="width:60px;height:60px;background:#FDEBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E60000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h2 style="color:#313663;margin-bottom:0.5rem;font-size:1.5rem">Carpool CRM</h2>
+            <p style="color:#6D7196;margin-bottom:1.5rem;font-size:0.9rem">Skriv inn passord for å fortsette</p>
+            <input type="password" id="password-input" placeholder="Passord" style="width:100%;padding:0.75rem 1rem;border:2px solid #e5e7eb;border-radius:8px;font-size:1rem;margin-bottom:1rem;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='#E60000'" onblur="this.style.borderColor='#e5e7eb'">
+            <button onclick="checkPassword()" style="width:100%;padding:0.75rem;background:#E60000;color:white;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#A20000'" onmouseout="this.style.background='#E60000'">Logg inn</button>
+            <p id="login-error" style="color:#E60000;margin-top:1rem;font-size:0.85rem;display:none">Feil passord</p>
+        </div>
+    </div>
+    <script>
+        function checkPassword() {
+            const input = document.getElementById('password-input').value;
+            if (input === 'bevegelsesfrihet') {
+                document.getElementById('login-overlay').style.display = 'none';
+                sessionStorage.setItem('auth', '1');
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('password-input').style.borderColor = '#E60000';
+            }
+        }
+        document.getElementById('password-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkPassword(); });
+        if (sessionStorage.getItem('auth') === '1') document.getElementById('login-overlay').style.display = 'none';
+    </script>
+
+    <div class="header">
+        <h1>Carpool CRM</h1>
+    </div>
+
+    <div class="container">
+        <h3 class="section-title">Velg område</h3>
+        <div id="area-grid" class="area-grid"></div>
+    </div>
+
+    <script>
+        const AREAS = [
+            { id: 'hagan', name: 'Hagan', description: 'Gjelleråsen industriområde, Nittedal' },
+            { id: 'a_s', name: 'Ås', description: 'Campus Ås, universitets- og forskningsmiljø' }
+        ];
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',');
+            return lines.slice(1).map(line => {
+                const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                const obj = {};
+                headers.forEach((h, i) => obj[h.trim()] = (values[i] || '').replace(/^"|"$/g, '').trim());
+                return obj;
+            });
+        }
+
+        function formatNumber(n) {
+            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+
+        async function loadAreas() {
+            const grid = document.getElementById('area-grid');
+
+            for (const area of AREAS) {
+                let companies = 0, employees = 0, ready = false;
+
+                try {
+                    const res = await fetch(`${area.id}/bedrifter.csv`);
+                    if (res.ok) {
+                        const data = parseCSV(await res.text());
+                        companies = data.length;
+                        employees = data.reduce((sum, c) => sum + (parseInt(c.antallAnsatte) || 0), 0);
+                        ready = companies > 0;
+                    }
+                } catch (e) {}
+
+                const card = document.createElement('a');
+                card.href = `${area.id}/`;
+                card.className = `area-card${ready ? '' : ' disabled'}`;
+                card.innerHTML = `
+                    <h2>
+                        <i data-lucide="map-pin"></i>
+                        ${area.name}
+                        ${ready ? '' : '<span class="badge wip">Under arbeid</span>'}
+                    </h2>
+                    <p class="description">${area.description}</p>
+                    <div class="stats">
+                        <div>
+                            <div class="stat-value">${ready ? companies : '—'}</div>
+                            <div class="stat-label">Bedrifter</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">${ready ? formatNumber(employees) : '—'}</div>
+                            <div class="stat-label">Ansatte</div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+
+            lucide.createIcons();
+        }
+
+        loadAreas();
+    </script>
+</body>
+</html>

@@ -1,80 +1,101 @@
-# Ruter Samkjøring CRM
+# Carpool CRM
 
-## Prosjektoversikt
-Salgsverktøy for Ruters samkjøringspilot rettet mot bedrifter i Hagan/Gjelleråsen industriområde.
+## Overview
+Sales tool for Ruter's carpooling pilot targeting companies in specific geographic areas.
 
 **Live:** https://ruter-carpool-crm.vercel.app
-**Passord:** `bevegelsesfrihet`
+**Password:** `bevegelsesfrihet`
 
-## Hva er bygget
+## Areas
 
-### Salgsliste (HTML-rapport)
-- **53 bedrifter** med kontaktinfo og samkjøringspotensial
-- **Card-basert layout** med vertikal scrolling for enkel lesing
-- **Samkjøringsscore (0-100%)** basert på:
-  - Antall ansatte (0-50 poeng)
-  - Bransje med skiftarbeid: industri, lager, sikkerhet, helse (0-30 poeng)
-  - Offentlig sektor bonus (0-10 poeng)
-  - Del av konsern bonus (0-10 poeng)
-- **Sortering:** Potensial / Ansatte / Navn
-- **Interaktivt kart** med Leaflet.js
-- **Google Sheets sync** for salgsfunnel-tracking
+| Area | Companies | Employees | Description |
+|------|-----------|-----------|-------------|
+| Hagan/Gjelleråsen | 53 | ~4,900 | Industrial area, Nittedal |
+| Ås | 12 | ~4,300 | Campus Ås, university & research |
 
-### Topp 5 bedrifter for samkjøring
-| # | Bedrift | Score | Ansatte |
-|---|---------|-------|---------|
-| 1 | Ringnes Supply Company | 90% | 764 |
-| 2 | Nittedal Kommune | 80% | 407 |
-| 3 | Garda Sikring | 80% | 371 |
-| 4 | Diplom-Is | 80% | 298 |
-| 5 | Würth Norge | 60% | 672 |
+## Project Structure
 
-### Datainnsamling
-- Bedriftsdata fra Brønnøysundregistrene
-- Kontaktpersoner funnet via websøk (Proff.no, bedriftssider, LinkedIn)
-- Kontaktprioritet: HR-direktør > Bærekraftsansvarlig > Kontorsjef > Daglig leder > Styreleder
-- Skreddersydde salgsargumenter per bedrift
-
-## Teknisk stack
-- **Frontend:** Vanilla HTML/CSS/JS med Lucide icons
-- **Kart:** Leaflet.js med CartoDB tiles
-- **Hosting:** Vercel (statisk site)
-- **Data:** CSV med Python-scripts for berikelse
-- **CRM-sync:** Google Sheets API
-
-## Filer
 ```
-output/hagan/
-├── index.html          # Hovedside (passordbeskyttet)
-├── salgsliste.html     # Kopi av index.html
-└── bedrifter.csv       # Rådata med kontaktinfo
+output/
+├── index.html              # Area picker (password protected)
+├── hagan/
+│   ├── index.html          # Generated report
+│   └── bedrifter.csv       # Company data
+└── a_s/
+    ├── index.html          # Generated report
+    └── bedrifter.csv       # Company data
 
 Scripts:
-├── filter_companies.py   # Filtrer bedrifter på geolokasjon
-├── enrich_companies.py   # Berik med kontaktinfo
-├── google_sheets.py      # Sync til Google Sheets
-└── bedrift               # CLI-wrapper
+├── generate_report.py      # Shared HTML report generator
+├── filter_companies.py     # Filter companies by geolocation
+├── enrich_companies.py     # Enrich with contact info
+├── google_sheets.py        # Sync to Google Sheets
+└── bedrift                 # CLI wrapper for full pipeline
 ```
 
-## Google Sheets sync
+## Generate Reports
+
+All areas use a shared template via `generate_report.py`. Changes to the template apply to all areas.
+
 ```bash
-python google_sheets.py sync "output/hagan/bedrifter.csv"
+# Generate all areas
+python generate_report.py
+
+# Generate specific area
+python generate_report.py hagan
+python generate_report.py a_s
+
+# List available areas
+python generate_report.py --list
 ```
 
-Kolonner i Sheet:
-- Bedriftsinfo (orgnr, navn, ansatte, adresse, bransje)
-- Kontaktinfo (navn, rolle, telefon, e-post)
-- Salgsnotater
-- **Salgskolonner** (redigeres manuelt): status, sist_kontaktet, neste_oppfølging, interne_notater, ansvarlig
+## Add New Area
+
+1. Add area config to `AREAS` dict in `generate_report.py`
+2. Create folder in `output/` with `bedrifter.csv`
+3. Run `python generate_report.py`
+4. Area automatically appears in the picker
+
+## CSV Schema
+
+Required columns:
+- `organisasjonsnummer`, `navn`, `antallAnsatte`, `adresse`
+- `latitude`, `longitude`
+- `naeringskode_beskrivelse`
+
+Contact columns (supports up to 4 contacts):
+- `kontakt_navn`, `kontakt_rolle`, `kontakt_telefon`, `kontakt_epost`
+- `kontakt2_navn`, `kontakt2_rolle`, `kontakt2_telefon`, `kontakt2_epost`
+- `kontakt3_navn`, `kontakt3_rolle`, `kontakt3_telefon`, `kontakt3_epost`
+- `kontakt4_navn`, `kontakt4_rolle`, `kontakt4_telefon`, `kontakt4_epost`
+
+Optional:
+- `hjemmeside`, `proff_url`, `salgsnotater`
+
+## Scoring Algorithm
+
+Carpool potential score (0-100%):
+- **Employees** (0-50 pts): 500+ = 50, 200+ = 40, 100+ = 30, 50+ = 20, 20+ = 10
+- **Shift work industry** (0-30 pts): production, warehouse, security, health, cleaning, transport
+- **Public sector** (0-10 pts): kommune, state, university, school
+- **Research/campus** (0-10 pts): research, institute, university
+
+## Tech Stack
+
+- **Frontend:** Vanilla HTML/CSS/JS, Lucide icons
+- **Map:** Leaflet.js with CartoDB tiles
+- **Hosting:** Vercel (static site)
+- **Data:** CSV with Python scripts
 
 ## Deployment
+
 ```bash
-cd output/hagan
+cd output
 vercel --prod
 ```
 
-## Neste steg
-- [ ] Legge til flere områder (Skedsmo, Lillestrøm, etc.)
-- [ ] Automatisk oppdatering av kontaktinfo
-- [ ] Integrasjon med CRM-system
-- [ ] E-post templates for outreach
+## Google Sheets Sync
+
+```bash
+python google_sheets.py sync "output/hagan/bedrifter.csv"
+```
