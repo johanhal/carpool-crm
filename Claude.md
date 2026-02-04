@@ -11,7 +11,7 @@ Sales tool for Ruter's carpooling pilot targeting companies in specific geograph
 | Area | Companies | Employees | Description |
 |------|-----------|-----------|-------------|
 | Hagan/Gjelleråsen | 53 | ~4,900 | Industrial area, Nittedal |
-| Ås | 12 | ~4,300 | Campus Ås, university & research |
+| Ås | 32 | ~4,600 | Campus Ås, university & research |
 
 ## Project Structure
 
@@ -70,7 +70,7 @@ Contact columns (supports up to 4 contacts):
 - `kontakt4_navn`, `kontakt4_rolle`, `kontakt4_telefon`, `kontakt4_epost`
 
 Optional:
-- `hjemmeside`, `proff_url`, `salgsnotater`
+- `hjemmeside`, `epost_generell`, `proff_url`, `salgsnotater`
 
 ## Scoring Algorithm
 
@@ -99,3 +99,30 @@ vercel --prod
 ```bash
 python google_sheets.py sync "output/hagan/bedrifter.csv"
 ```
+
+## Contact Enrichment
+
+### Role Priority
+When finding contacts, prioritize in this order:
+1. **HR** - HR-direktør, HR-sjef, Personalsjef, People & Culture
+2. **Facility** - Eiendomssjef, Facility Manager, Kontorsjef, Driftssjef
+3. **Sustainability** - Bærekraft, ESG, Miljøansvarlig
+4. **CEO** - Daglig leder, Administrerende direktør
+
+### Sales Arguments
+- Do NOT mention employee count (already displayed on card)
+- DO mention proximity to other companies on the list ("Samlokalisert med...")
+- Include certifications found (Miljøfyrtårn, ISO 14001)
+- Mention shift work patterns if applicable
+
+### CSV Formatting (Critical)
+When writing CSV files, ensure:
+- **All rows have same column count as header** - missing commas for empty fields cause column shifts
+- Empty contact fields must still have commas: `,,,,` not just `,`
+- Use Python's `csv.writer` to handle quoting automatically
+- Verify with: `python -c "import csv; r=csv.reader(open('file.csv')); h=next(r); print([i+2 for i,row in enumerate(r) if len(row)!=len(h)])"`
+
+### Display Filtering
+The report generator filters out:
+- Empty contact names (blank strings)
+- "nan" values (from pandas NaN)
