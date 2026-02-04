@@ -88,28 +88,37 @@ def generate_card_html(row, rank):
 
     contacts = []
     for name_f, role_f, phone_f, email_f in contact_fields:
-        if row.get(name_f):
-            contact_links = []
-            if row.get(phone_f):
-                phone = str(row[phone_f]).replace(' ', '')
-                contact_links.append(f'<a href="tel:{phone}" class="contact-link"><i data-lucide="phone"></i>{escape_html(row[phone_f])}</a>')
-            if row.get(email_f):
-                contact_links.append(f'<a href="mailto:{row[email_f]}" class="contact-link"><i data-lucide="mail"></i>{escape_html(row[email_f])}</a>')
+        name = str(row.get(name_f, '') or '').strip()
+        if not name or name.lower() == 'nan':
+            continue
+        contact_links = []
+        if row.get(phone_f) and str(row[phone_f]).strip():
+            phone = str(row[phone_f]).replace(' ', '')
+            contact_links.append(f'<a href="tel:{phone}" class="contact-link"><i data-lucide="phone"></i>{escape_html(row[phone_f])}</a>')
+        if row.get(email_f) and str(row[email_f]).strip():
+            contact_links.append(f'<a href="mailto:{row[email_f]}" class="contact-link"><i data-lucide="mail"></i>{escape_html(row[email_f])}</a>')
 
-            role_html = f'<span class="contact-role">{escape_html(row[role_f])}</span>' if row.get(role_f) else ''
-            links_html = f'<div class="contact-links">{" ".join(contact_links)}</div>' if contact_links else ''
+        role = str(row.get(role_f, '') or '').strip()
+        role_html = f'<div class="contact-role">{escape_html(role)}</div>' if role else ''
+        links_html = f'<div class="contact-links">{"".join(contact_links)}</div>' if contact_links else ''
 
-            contacts.append(f'''<div class="contact-person">
-                <span class="contact-name">{escape_html(row[name_f])}</span>{role_html}{links_html}
-            </div>''')
+        contacts.append(f'''<div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">{escape_html(name)}</span>
+                {role_html}
+            </div>
+            {links_html}
+        </div>''')
 
     if contacts:
         contacts_html = f'<div class="contacts-section">{"".join(contacts)}</div>'
 
-    # General links (website, proff)
+    # General links (website, email, proff)
     general_links = []
     if row.get('hjemmeside'):
         general_links.append(f'<a href="{row["hjemmeside"]}" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a>')
+    if row.get('epost_generell'):
+        general_links.append(f'<a href="mailto:{row["epost_generell"]}" class="general-link"><i data-lucide="mail"></i>Kontakt</a>')
     if row.get('proff_url'):
         general_links.append(f'<a href="{row["proff_url"]}" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a>')
     elif row.get('organisasjonsnummer'):
@@ -136,6 +145,7 @@ def generate_card_html(row, rank):
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>{employees} ansatte</span>
                             <span class="score-badge {score_class}"><i data-lucide="target"></i>{score}%</span>
+                            {general_html}
                         </div>
                     </div>
                 </div>
@@ -144,7 +154,6 @@ def generate_card_html(row, rank):
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>{escape_html(row.get('adresse', ''))}</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>{escape_html(row.get('naeringskode_beskrivelse', ''))}</span>
-                        {general_html}
                     </div>
                     {contacts_html}
                 </div>
@@ -405,16 +414,21 @@ def generate_html(df, area_name, area_folder):
         .general-link i {{ width: 12px; height: 12px; }}
 
         .contacts-section {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
         }}
 
-        .contact-person {{
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0;
+        .contact-card {{
+            padding: 0.6rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }}
+
+        .contact-header {{
+            margin-bottom: 0.35rem;
         }}
 
         .contact-name {{
@@ -424,34 +438,31 @@ def generate_html(df, area_name, area_folder):
         }}
 
         .contact-role {{
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--ruter-gray);
-        }}
-        .contact-role::before {{
-            content: "·";
-            margin: 0 0.35rem;
         }}
 
         .contact-links {{
-            display: inline-flex;
-            gap: 0.3rem;
-            margin-left: 0.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
         }}
 
         .contact-link {{
             display: inline-flex;
             align-items: center;
-            gap: 0.2rem;
-            padding: 0.2rem 0.4rem;
-            background: #f1f5f9;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: white;
+            border: 1px solid #e2e8f0;
             border-radius: 4px;
             font-size: 0.7rem;
             color: var(--ruter-navy);
             text-decoration: none;
             transition: all 0.15s;
         }}
-        .contact-link:hover {{ background: var(--ruter-red-light); color: var(--ruter-red); }}
-        .contact-link i {{ width: 11px; height: 11px; }}
+        .contact-link:hover {{ background: var(--ruter-red-light); border-color: var(--ruter-red); color: var(--ruter-red); }}
+        .contact-link i {{ width: 12px; height: 12px; flex-shrink: 0; }}
 
         .sales-argument {{
             display: flex;
@@ -500,6 +511,19 @@ def generate_html(df, area_name, area_folder):
                 <button class="sort-btn" onclick="sortCards('name')">Navn</button>
             </div>
             <button class="btn" onclick="toggleMap()"><i data-lucide="map"></i>Kart</button>
+            <button class="btn" onclick="showSyncModal()" style="background:#2563eb"><i data-lucide="upload-cloud"></i>Sheets</button>
+        </div>
+    </div>
+
+    <div id="sync-modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
+        <div style="background:white;padding:2rem;border-radius:12px;max-width:500px;width:90%;position:relative">
+            <span onclick="closeSyncModal()" style="position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#9ca3af">&times;</span>
+            <h2 style="margin-bottom:1rem;color:var(--ruter-navy)">Sync til Google Sheets</h2>
+            <p style="margin-bottom:1rem;color:#4b5563">Kjør denne kommandoen i terminalen:</p>
+            <div style="display:flex;gap:0.5rem;background:#f1f5f9;padding:1rem;border-radius:8px;margin-bottom:1rem">
+                <code id="sync-command" style="flex:1;font-family:monospace;font-size:0.85rem;word-break:break-all">python google_sheets.py sync "output/{area_folder}/bedrifter.csv"</code>
+                <button class="btn" onclick="copyCommand()">Kopier</button>
+            </div>
         </div>
     </div>
 
@@ -562,6 +586,22 @@ def generate_html(df, area_name, area_folder):
                 container.appendChild(card);
             }});
         }}
+
+        function showSyncModal() {{
+            document.getElementById('sync-modal').style.display = 'flex';
+        }}
+
+        function closeSyncModal() {{
+            document.getElementById('sync-modal').style.display = 'none';
+        }}
+
+        function copyCommand() {{
+            navigator.clipboard.writeText(document.getElementById('sync-command').textContent);
+        }}
+
+        document.getElementById('sync-modal').addEventListener('click', e => {{
+            if (e.target.id === 'sync-modal') closeSyncModal();
+        }});
     </script>
 </body>
 </html>'''

@@ -223,16 +223,21 @@
         .general-link i { width: 12px; height: 12px; }
 
         .contacts-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
         }
 
-        .contact-person {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0;
+        .contact-card {
+            padding: 0.6rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .contact-header {
+            margin-bottom: 0.35rem;
         }
 
         .contact-name {
@@ -242,34 +247,31 @@
         }
 
         .contact-role {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--ruter-gray);
-        }
-        .contact-role::before {
-            content: "·";
-            margin: 0 0.35rem;
         }
 
         .contact-links {
-            display: inline-flex;
-            gap: 0.3rem;
-            margin-left: 0.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
         }
 
         .contact-link {
             display: inline-flex;
             align-items: center;
-            gap: 0.2rem;
-            padding: 0.2rem 0.4rem;
-            background: #f1f5f9;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: white;
+            border: 1px solid #e2e8f0;
             border-radius: 4px;
             font-size: 0.7rem;
             color: var(--ruter-navy);
             text-decoration: none;
             transition: all 0.15s;
         }
-        .contact-link:hover { background: var(--ruter-red-light); color: var(--ruter-red); }
-        .contact-link i { width: 11px; height: 11px; }
+        .contact-link:hover { background: var(--ruter-red-light); border-color: var(--ruter-red); color: var(--ruter-red); }
+        .contact-link i { width: 12px; height: 12px; flex-shrink: 0; }
 
         .sales-argument {
             display: flex;
@@ -318,6 +320,19 @@
                 <button class="sort-btn" onclick="sortCards('name')">Navn</button>
             </div>
             <button class="btn" onclick="toggleMap()"><i data-lucide="map"></i>Kart</button>
+            <button class="btn" onclick="showSyncModal()" style="background:#2563eb"><i data-lucide="upload-cloud"></i>Sheets</button>
+        </div>
+    </div>
+
+    <div id="sync-modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
+        <div style="background:white;padding:2rem;border-radius:12px;max-width:500px;width:90%;position:relative">
+            <span onclick="closeSyncModal()" style="position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#9ca3af">&times;</span>
+            <h2 style="margin-bottom:1rem;color:var(--ruter-navy)">Sync til Google Sheets</h2>
+            <p style="margin-bottom:1rem;color:#4b5563">Kjør denne kommandoen i terminalen:</p>
+            <div style="display:flex;gap:0.5rem;background:#f1f5f9;padding:1rem;border-radius:8px;margin-bottom:1rem">
+                <code id="sync-command" style="flex:1;font-family:monospace;font-size:0.85rem;word-break:break-all">python google_sheets.py sync "output/hagan/bedrifter.csv"</code>
+                <button class="btn" onclick="copyCommand()">Kopier</button>
+            </div>
         </div>
     </div>
 
@@ -334,6 +349,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>764 ansatte</span>
                             <span class="score-badge score-high"><i data-lucide="target"></i>80%</span>
+                            <div class="general-links"><a href="https://www.ringnes.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=990666466" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -342,11 +358,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Bryggeriveien 2, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av øl</span>
-                        <div class="general-links"><a href="https://www.ringnes.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=990666466" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Patricia Da Costa Gomes Medina</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722069500" class="contact-link"><i data-lucide="phone"></i>+4722069500</a> <a href="mailto:ringnes@ringnes.no" class="contact-link"><i data-lucide="mail"></i>ringnes@ringnes.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Patricia Da Costa Gomes Medina</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722069500" class="contact-link"><i data-lucide="phone"></i>+4722069500</a><a href="mailto:ringnes@ringnes.no" class="contact-link"><i data-lucide="mail"></i>ringnes@ringnes.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -365,6 +384,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>407 ansatte</span>
                             <span class="score-badge score-high"><i data-lucide="target"></i>80%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=974637987" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -373,11 +393,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Stamveien 6, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Offentlig administrasjon tilknyttet helsestell, undervisning, kultur og annen sosial virksomhet</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=974637987" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Adelheid Buschmann Kristiansen</span><span class="contact-role">Kommunedirektør</span><div class="contact-links"><a href="tel:+4767059000" class="contact-link"><i data-lucide="phone"></i>+4767059000</a> <a href="mailto:postmottak@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>postmottak@nittedal.kommune.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Adelheid Buschmann Kristiansen</span>
+                <div class="contact-role">Kommunedirektør</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767059000" class="contact-link"><i data-lucide="phone"></i>+4767059000</a><a href="mailto:postmottak@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>postmottak@nittedal.kommune.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -396,6 +419,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>298 ansatte</span>
                             <span class="score-badge score-high"><i data-lucide="target"></i>70%</span>
+                            <div class="general-links"><a href="https://www.diplom-is.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=984460198" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -404,11 +428,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 10, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av iskrem og andre spiselige isprodukter</span>
-                        <div class="general-links"><a href="https://www.diplom-is.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=984460198" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Martin Kjekshus</span><span class="contact-role">Administrerende direktør</span><div class="contact-links"><a href="tel:02001" class="contact-link"><i data-lucide="phone"></i>02001</a> <a href="mailto:firmapost@diplom-is.no" class="contact-link"><i data-lucide="mail"></i>firmapost@diplom-is.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Martin Kjekshus</span>
+                <div class="contact-role">Administrerende direktør</div>
+            </div>
+            <div class="contact-links"><a href="tel:02001" class="contact-link"><i data-lucide="phone"></i>02001</a><a href="mailto:firmapost@diplom-is.no" class="contact-link"><i data-lucide="mail"></i>firmapost@diplom-is.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -427,6 +454,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>371 ansatte</span>
                             <span class="score-badge score-high"><i data-lucide="target"></i>70%</span>
+                            <div class="general-links"><a href="https://www.gardasikring.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=936659128" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -435,11 +463,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Stamveien 8, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av metallkonstruksjoner og deler</span>
-                        <div class="general-links"><a href="https://www.gardasikring.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=936659128" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Kai Even Rostad Øvregard</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4740002101" class="contact-link"><i data-lucide="phone"></i>+4740002101</a> <a href="mailto:post@gardasikring.no" class="contact-link"><i data-lucide="mail"></i>post@gardasikring.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Kai Even Rostad Øvregard</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4740002101" class="contact-link"><i data-lucide="phone"></i>+4740002101</a><a href="mailto:post@gardasikring.no" class="contact-link"><i data-lucide="mail"></i>post@gardasikring.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -458,6 +489,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>672 ansatte</span>
                             <span class="score-badge score-medium"><i data-lucide="target"></i>50%</span>
+                            <div class="general-links"><a href="https://www.wuerth.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=831018682" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -466,11 +498,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Morteveien 12, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med jernvarer, rørleggerartikler og oppvarmingsutstyr</span>
-                        <div class="general-links"><a href="https://www.wuerth.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=831018682" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Gøran Mago Ramstad</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4746401500" class="contact-link"><i data-lucide="phone"></i>+4746401500</a> <a href="mailto:kontakt@wuerth.no" class="contact-link"><i data-lucide="mail"></i>kontakt@wuerth.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Gøran Mago Ramstad</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4746401500" class="contact-link"><i data-lucide="phone"></i>+4746401500</a><a href="mailto:kontakt@wuerth.no" class="contact-link"><i data-lucide="mail"></i>kontakt@wuerth.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -489,6 +524,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>231 ansatte</span>
                             <span class="score-badge score-medium"><i data-lucide="target"></i>40%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=996427544" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -497,11 +533,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 18, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Bygging av anlegg for elektrisitet og telekommunikasjon på land</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=996427544" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Terje Hoemsnes</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:post@siteservice.no" class="contact-link"><i data-lucide="mail"></i>post@siteservice.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Terje Hoemsnes</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:post@siteservice.no" class="contact-link"><i data-lucide="mail"></i>post@siteservice.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -520,6 +559,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>27 ansatte</span>
                             <span class="score-badge score-medium"><i data-lucide="target"></i>40%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=970888160" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -528,11 +568,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Masteveien 6, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av kraner og ventiler ellers</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=970888160" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Arild Willersrud</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722646550" class="contact-link"><i data-lucide="phone"></i>+4722646550</a> <a href="mailto:arvid@gassarmatur.no" class="contact-link"><i data-lucide="mail"></i>arvid@gassarmatur.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Arild Willersrud</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722646550" class="contact-link"><i data-lucide="phone"></i>+4722646550</a><a href="mailto:arvid@gassarmatur.no" class="contact-link"><i data-lucide="mail"></i>arvid@gassarmatur.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -551,6 +594,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=979593422" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -559,11 +603,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 18, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Psykiatriske sykehustjenester for voksne</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=979593422" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Tove Mathiesen</span><span class="contact-role">Psykologfaglig rådgiver (kontakt)</span><div class="contact-links"><a href="tel:+4722168200" class="contact-link"><i data-lucide="phone"></i>+4722168200</a> <a href="mailto:Tove.Mathiesen@ahus.no" class="contact-link"><i data-lucide="mail"></i>Tove.Mathiesen@ahus.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Tove Mathiesen</span>
+                <div class="contact-role">Psykologfaglig rådgiver (kontakt)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722168200" class="contact-link"><i data-lucide="phone"></i>+4722168200</a><a href="mailto:Tove.Mathiesen@ahus.no" class="contact-link"><i data-lucide="mail"></i>Tove.Mathiesen@ahus.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -582,6 +629,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993575968" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -590,11 +638,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 12, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Godstransport på vei</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993575968" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Rune Steen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767073070" class="contact-link"><i data-lucide="phone"></i>+4767073070</a> <a href="mailto:post@otrans.no" class="contact-link"><i data-lucide="mail"></i>post@otrans.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Rune Steen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767073070" class="contact-link"><i data-lucide="phone"></i>+4767073070</a><a href="mailto:post@otrans.no" class="contact-link"><i data-lucide="mail"></i>post@otrans.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -613,6 +664,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>15 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://rosmek.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=986680829" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -621,11 +673,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 9, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av metallkonstruksjoner og deler</span>
-                        <div class="general-links"><a href="https://rosmek.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=986680829" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Truls Enghaugen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767070993" class="contact-link"><i data-lucide="phone"></i>+4767070993</a> <a href="mailto:post@rosmek.no" class="contact-link"><i data-lucide="mail"></i>post@rosmek.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Truls Enghaugen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767070993" class="contact-link"><i data-lucide="phone"></i>+4767070993</a><a href="mailto:post@rosmek.no" class="contact-link"><i data-lucide="mail"></i>post@rosmek.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -644,6 +699,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>18 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=817967272" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -652,11 +708,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 13, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av andre metallvarer ikke nevnt annet sted</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=817967272" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Arild Frøberg</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767064060" class="contact-link"><i data-lucide="phone"></i>+4767064060</a> <a href="mailto:post@soran.no" class="contact-link"><i data-lucide="mail"></i>post@soran.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Arild Frøberg</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767064060" class="contact-link"><i data-lucide="phone"></i>+4767064060</a><a href="mailto:post@soran.no" class="contact-link"><i data-lucide="mail"></i>post@soran.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -675,6 +734,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>60 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://www.nittedal.kommune.no/enheter/nittedalsskolen/holumskogen-skole/" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=976638654" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -683,11 +743,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Morteveien 19, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Ordinær grunnskoleundervisning</span>
-                        <div class="general-links"><a href="https://www.nittedal.kommune.no/enheter/nittedalsskolen/holumskogen-skole/" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=976638654" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Vanessa Humlekjær</span><span class="contact-role">Rektor</span><div class="contact-links"><a href="tel:+4791002734" class="contact-link"><i data-lucide="phone"></i>+4791002734</a> <a href="mailto:vanessa.humlekjer@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>vanessa.humlekjer@nittedal.kommune.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Vanessa Humlekjær</span>
+                <div class="contact-role">Rektor</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4791002734" class="contact-link"><i data-lucide="phone"></i>+4791002734</a><a href="mailto:vanessa.humlekjer@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>vanessa.humlekjer@nittedal.kommune.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -706,6 +769,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>101 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=910235915" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -714,11 +778,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 20B, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Trykking ellers</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=910235915" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Nils Jacob Førli</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722726600" class="contact-link"><i data-lucide="phone"></i>+4722726600</a> <a href="mailto:ag@andvord.no" class="contact-link"><i data-lucide="mail"></i>ag@andvord.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Nils Jacob Førli</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722726600" class="contact-link"><i data-lucide="phone"></i>+4722726600</a><a href="mailto:ag@andvord.no" class="contact-link"><i data-lucide="mail"></i>ag@andvord.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -737,6 +804,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>197 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=975381781" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -745,11 +813,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Destilleriveien 11, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Agenturhandel med nærings- og nytelsesmidler</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=975381781" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Ken Ove Nyhus</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767065000" class="contact-link"><i data-lucide="phone"></i>+4767065000</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Ken Ove Nyhus</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767065000" class="contact-link"><i data-lucide="phone"></i>+4767065000</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -768,6 +839,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>51 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=985214034" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -776,11 +848,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Gjelleråsveien 2, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Oppføring av bygninger</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=985214034" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Line Christin Karlsen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767073830" class="contact-link"><i data-lucide="phone"></i>+4767073830</a> <a href="mailto:post@karlsen-nordseth.no" class="contact-link"><i data-lucide="mail"></i>post@karlsen-nordseth.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Line Christin Karlsen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767073830" class="contact-link"><i data-lucide="phone"></i>+4767073830</a><a href="mailto:post@karlsen-nordseth.no" class="contact-link"><i data-lucide="mail"></i>post@karlsen-nordseth.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -799,6 +874,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>31 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=975301990" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -807,11 +883,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Ørekyteveien 1, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Førskoleundervisning og drift av barnehager</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=975301990" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Florian Olberg</span><span class="contact-role">Styrer</span><div class="contact-links"><a href="tel:+4747690752" class="contact-link"><i data-lucide="phone"></i>+4747690752</a> <a href="mailto:florian.olberg@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>florian.olberg@nittedal.kommune.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Florian Olberg</span>
+                <div class="contact-role">Styrer</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4747690752" class="contact-link"><i data-lucide="phone"></i>+4747690752</a><a href="mailto:florian.olberg@nittedal.kommune.no" class="contact-link"><i data-lucide="mail"></i>florian.olberg@nittedal.kommune.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -830,6 +909,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>73 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="https://www.dvs.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=979677863" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -838,11 +918,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 6, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Snekkerarbeid</span>
-                        <div class="general-links"><a href="https://www.dvs.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=979677863" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Leif Erik Mortensen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722105551" class="contact-link"><i data-lucide="phone"></i>+4722105551</a> <a href="mailto:post@dvs.no" class="contact-link"><i data-lucide="mail"></i>post@dvs.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Leif Erik Mortensen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722105551" class="contact-link"><i data-lucide="phone"></i>+4722105551</a><a href="mailto:post@dvs.no" class="contact-link"><i data-lucide="mail"></i>post@dvs.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -861,6 +944,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>57 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=914287987" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -869,11 +953,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Carl Bergersens vei 5, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=914287987" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Bredo Steen-Gundersen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Bredo Steen-Gundersen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -892,6 +979,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>22 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=820732022" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -900,11 +988,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Carl Bergersens vei 3, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med bredt vareutvalg med hovedvekt på nærings- og nytelsesmidler</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=820732022" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Pål Arve Kleven</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Pål Arve Kleven</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -923,6 +1014,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>23 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="https://www.morek.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=963447086" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -931,11 +1023,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 25, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med deler og utstyr for motorvogner</span>
-                        <div class="general-links"><a href="https://www.morek.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=963447086" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Henrik Fagerland</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767063500" class="contact-link"><i data-lucide="phone"></i>+4767063500</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Henrik Fagerland</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767063500" class="contact-link"><i data-lucide="phone"></i>+4767063500</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -954,6 +1049,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>36 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="https://www.ellco.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=936584462" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -962,11 +1058,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Morteveien 4, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Trykking ellers</span>
-                        <div class="general-links"><a href="https://www.ellco.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=936584462" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Christian Egedius</span><span class="contact-role">Daglig leder/Styrets leder</span><div class="contact-links"><a href="tel:+4767062040" class="contact-link"><i data-lucide="phone"></i>+4767062040</a> <a href="mailto:mail@ellco.no" class="contact-link"><i data-lucide="mail"></i>mail@ellco.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Christian Egedius</span>
+                <div class="contact-role">Daglig leder/Styrets leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767062040" class="contact-link"><i data-lucide="phone"></i>+4767062040</a><a href="mailto:mail@ellco.no" class="contact-link"><i data-lucide="mail"></i>mail@ellco.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -985,6 +1084,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>25 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="https://www.oslofiner.no/" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=918866949" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -993,11 +1093,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Destilleriveien 5, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med tømmer, trelast, byggevarer og sanitærutstyr</span>
-                        <div class="general-links"><a href="https://www.oslofiner.no/" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=918866949" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Henriette Bohman Lillebekk</span><span class="contact-role">Daglig leder/Styrets leder</span><div class="contact-links"><a href="tel:+4723006160" class="contact-link"><i data-lucide="phone"></i>+4723006160</a> <a href="mailto:post@oslofiner.no" class="contact-link"><i data-lucide="mail"></i>post@oslofiner.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Henriette Bohman Lillebekk</span>
+                <div class="contact-role">Daglig leder/Styrets leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4723006160" class="contact-link"><i data-lucide="phone"></i>+4723006160</a><a href="mailto:post@oslofiner.no" class="contact-link"><i data-lucide="mail"></i>post@oslofiner.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1016,6 +1119,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>28 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="https://www.varia.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=980409821" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1024,11 +1128,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 7, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Bearbeiding av metaller</span>
-                        <div class="general-links"><a href="https://www.varia.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=980409821" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Tommy Freitag</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767061321" class="contact-link"><i data-lucide="phone"></i>+4767061321</a> <a href="mailto:varia.con@varia.no" class="contact-link"><i data-lucide="mail"></i>varia.con@varia.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Tommy Freitag</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767061321" class="contact-link"><i data-lucide="phone"></i>+4767061321</a><a href="mailto:varia.con@varia.no" class="contact-link"><i data-lucide="mail"></i>varia.con@varia.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1047,6 +1154,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>29 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="https://www.unilamp.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=992846070" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1055,11 +1163,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 11, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med husholdnings-, kontor- og butikkmøbler, gulvtepper og belysningsutstyr</span>
-                        <div class="general-links"><a href="https://www.unilamp.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=992846070" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Karl Mario Seland</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4798499849" class="contact-link"><i data-lucide="phone"></i>+4798499849</a> <a href="mailto:karl.mario.seland@unilamp.no" class="contact-link"><i data-lucide="mail"></i>karl.mario.seland@unilamp.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Karl Mario Seland</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4798499849" class="contact-link"><i data-lucide="phone"></i>+4798499849</a><a href="mailto:karl.mario.seland@unilamp.no" class="contact-link"><i data-lucide="mail"></i>karl.mario.seland@unilamp.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1078,6 +1189,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>41 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=856818462" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1086,11 +1198,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 2, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Pakkevirksomhet</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=856818462" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Geir Sture</span><span class="contact-role">Daglig leder (morselskap)</span><div class="contact-links"><a href="tel:+4746870000" class="contact-link"><i data-lucide="phone"></i>+4746870000</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Geir Sture</span>
+                <div class="contact-role">Daglig leder (morselskap)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4746870000" class="contact-link"><i data-lucide="phone"></i>+4746870000</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1109,6 +1224,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=913979648" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1117,11 +1233,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brådalsstubben 18, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med motorvogner</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=913979648" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Imran Bahadar Khan</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Imran Bahadar Khan</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1140,6 +1259,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=982711339" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1148,11 +1268,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 2B, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=982711339" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Stig Jaltved</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4723372630" class="contact-link"><i data-lucide="phone"></i>+4723372630</a> <a href="mailto:info-no@unicarrierseurope.com" class="contact-link"><i data-lucide="mail"></i>info-no@unicarrierseurope.com</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Stig Jaltved</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4723372630" class="contact-link"><i data-lucide="phone"></i>+4723372630</a><a href="mailto:info-no@unicarrierseurope.com" class="contact-link"><i data-lucide="mail"></i>info-no@unicarrierseurope.com</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1171,6 +1294,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=982179289" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1179,11 +1303,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Masteveien 4, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med motorvogner</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=982179289" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Dag Asbjørnsen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Dag Asbjørnsen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1202,6 +1329,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=929047966" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1210,11 +1338,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brennaveien 14A, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Oppføring av bygninger</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=929047966" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Knut Erik Lindseth</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Knut Erik Lindseth</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1233,6 +1364,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.glommen.as" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=946999148" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1241,11 +1373,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 12, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med informasjons- og kommunikasjonsteknologiutstyr</span>
-                        <div class="general-links"><a href="https://www.glommen.as" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=946999148" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Bjørn Henning Glommen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722803400" class="contact-link"><i data-lucide="phone"></i>+4722803400</a> <a href="mailto:post@glommen.as" class="contact-link"><i data-lucide="mail"></i>post@glommen.as</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Bjørn Henning Glommen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722803400" class="contact-link"><i data-lucide="phone"></i>+4722803400</a><a href="mailto:post@glommen.as" class="contact-link"><i data-lucide="mail"></i>post@glommen.as</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1264,6 +1399,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>6 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=926144405" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1272,11 +1408,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 1, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med motorvogner</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=926144405" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Andre Sverre Øvstegård</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767061313" class="contact-link"><i data-lucide="phone"></i>+4767061313</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Andre Sverre Øvstegård</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767061313" class="contact-link"><i data-lucide="phone"></i>+4767061313</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1295,6 +1434,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>6 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.interkit.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=994316486" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1303,11 +1443,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 20, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
-                        <div class="general-links"><a href="https://www.interkit.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=994316486" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Rolf Morten Arnestad</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:interkit@interkit.no" class="contact-link"><i data-lucide="mail"></i>interkit@interkit.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Rolf Morten Arnestad</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:interkit@interkit.no" class="contact-link"><i data-lucide="mail"></i>interkit@interkit.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1326,6 +1469,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=925505803" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1334,11 +1478,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Carl Bergersens vei 1, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med drivstoff til motorvogner</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=925505803" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Styreleder/Eier</span><span class="contact-role">Bensinstasjon</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Styreleder/Eier</span>
+                <div class="contact-role">Bensinstasjon</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1357,6 +1504,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>6 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.postrom.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=952961942" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1365,11 +1513,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 24, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
-                        <div class="general-links"><a href="https://www.postrom.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=952961942" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Tom Erik Harnes</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4723338833" class="contact-link"><i data-lucide="phone"></i>+4723338833</a> <a href="mailto:info@postrom.no" class="contact-link"><i data-lucide="mail"></i>info@postrom.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Tom Erik Harnes</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4723338833" class="contact-link"><i data-lucide="phone"></i>+4723338833</a><a href="mailto:info@postrom.no" class="contact-link"><i data-lucide="mail"></i>info@postrom.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1388,6 +1539,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=959199299" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1396,11 +1548,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Stamveien 7, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med tekstiler og utstyrsvarer</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=959199299" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Hege Anita Normann</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767062210" class="contact-link"><i data-lucide="phone"></i>+4767062210</a> <a href="mailto:hege@norgesmarkiser.no" class="contact-link"><i data-lucide="mail"></i>hege@norgesmarkiser.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Hege Anita Normann</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767062210" class="contact-link"><i data-lucide="phone"></i>+4767062210</a><a href="mailto:hege@norgesmarkiser.no" class="contact-link"><i data-lucide="mail"></i>hege@norgesmarkiser.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1419,6 +1574,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993356085" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1427,11 +1583,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Morteveien 6, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Reklamebyråvirksomhet</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993356085" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Ikke registrert</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722557580" class="contact-link"><i data-lucide="phone"></i>+4722557580</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Ikke registrert</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722557580" class="contact-link"><i data-lucide="phone"></i>+4722557580</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1450,6 +1609,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=929514351" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1458,11 +1618,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Masteveien 10, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Lotteri- og gamblingvirksomhet</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=929514351" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Rune Nilsen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4746831000" class="contact-link"><i data-lucide="phone"></i>+4746831000</a> <a href="mailto:vidar.nilsen@vendcomatic.no" class="contact-link"><i data-lucide="mail"></i>vidar.nilsen@vendcomatic.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Rune Nilsen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4746831000" class="contact-link"><i data-lucide="phone"></i>+4746831000</a><a href="mailto:vidar.nilsen@vendcomatic.no" class="contact-link"><i data-lucide="mail"></i>vidar.nilsen@vendcomatic.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1481,6 +1644,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>15 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=935378087" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1489,11 +1653,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Morteveien 1, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med bredt vareutvalg med hovedvekt på nærings- og nytelsesmidler</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=935378087" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Styreleder/Daglig leder</span><span class="contact-role">KIWI-kjøpmann</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Styreleder/Daglig leder</span>
+                <div class="contact-role">KIWI-kjøpmann</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1512,6 +1679,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=925238392" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1520,11 +1688,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Karushøgda 42A, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Rengjøring av bygninger</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=925238392" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Zarah Khan</span><span class="contact-role">Styrets leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Zarah Khan</span>
+                <div class="contact-role">Styrets leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1543,6 +1714,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.diaproff.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=987338830" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1551,11 +1723,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Masteveien 8, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskinverktøy</span>
-                        <div class="general-links"><a href="https://www.diaproff.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=987338830" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Carl Ronny Olsen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767067330" class="contact-link"><i data-lucide="phone"></i>+4767067330</a> <a href="mailto:post@diaproff.no" class="contact-link"><i data-lucide="mail"></i>post@diaproff.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Carl Ronny Olsen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767067330" class="contact-link"><i data-lucide="phone"></i>+4767067330</a><a href="mailto:post@diaproff.no" class="contact-link"><i data-lucide="mail"></i>post@diaproff.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1574,6 +1749,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>8 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=821196302" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1582,11 +1758,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Karushøgda 29, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Andre post- og budtjenester</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=821196302" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Saqeb Iqbal</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4745699337" class="contact-link"><i data-lucide="phone"></i>+4745699337</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Saqeb Iqbal</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4745699337" class="contact-link"><i data-lucide="phone"></i>+4745699337</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1605,6 +1784,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>9 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.oslotrykkluft.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=995717794" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1613,11 +1793,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 17, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr til bergverksdrift, olje- og gassutvinning og bygge- og anleggsvirksomhet</span>
-                        <div class="general-links"><a href="https://www.oslotrykkluft.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=995717794" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Unni Gulbrandsen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722787300" class="contact-link"><i data-lucide="phone"></i>+4722787300</a> <a href="mailto:kontakt@oslotrykkluft.no" class="contact-link"><i data-lucide="mail"></i>kontakt@oslotrykkluft.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Unni Gulbrandsen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722787300" class="contact-link"><i data-lucide="phone"></i>+4722787300</a><a href="mailto:kontakt@oslotrykkluft.no" class="contact-link"><i data-lucide="mail"></i>kontakt@oslotrykkluft.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1636,6 +1819,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>9 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=960417151" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1644,11 +1828,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 15, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med jernvarer, rørleggerartikler og oppvarmingsutstyr</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=960417151" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Per Erik Raasok</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722707910" class="contact-link"><i data-lucide="phone"></i>+4722707910</a> <a href="mailto:info@cimberio.no" class="contact-link"><i data-lucide="mail"></i>info@cimberio.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Per Erik Raasok</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722707910" class="contact-link"><i data-lucide="phone"></i>+4722707910</a><a href="mailto:info@cimberio.no" class="contact-link"><i data-lucide="mail"></i>info@cimberio.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1667,6 +1854,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>10 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.unibak.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=956786282" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1675,11 +1863,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Masteveien 1, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
-                        <div class="general-links"><a href="https://www.unibak.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=956786282" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Torstein Aase Johnsen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767073000" class="contact-link"><i data-lucide="phone"></i>+4767073000</a> <a href="mailto:gunnar.clifford@unibak.no" class="contact-link"><i data-lucide="mail"></i>gunnar.clifford@unibak.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Torstein Aase Johnsen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767073000" class="contact-link"><i data-lucide="phone"></i>+4767073000</a><a href="mailto:gunnar.clifford@unibak.no" class="contact-link"><i data-lucide="mail"></i>gunnar.clifford@unibak.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1698,6 +1889,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=984580312" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1706,11 +1898,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 28, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Uspesifisert engroshandel</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=984580312" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Bøye Einang</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4763928400" class="contact-link"><i data-lucide="phone"></i>+4763928400</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Bøye Einang</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4763928400" class="contact-link"><i data-lucide="phone"></i>+4763928400</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1729,6 +1924,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.karlstorz.com" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993346292" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1737,11 +1933,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Stamveien 1, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med apotekvarer og medisinske varer</span>
-                        <div class="general-links"><a href="https://www.karlstorz.com" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=993346292" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Anders Engøy</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4763805600" class="contact-link"><i data-lucide="phone"></i>+4763805600</a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Anders Engøy</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4763805600" class="contact-link"><i data-lucide="phone"></i>+4763805600</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1760,6 +1959,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.empack.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=976547187" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1768,11 +1968,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 8, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
-                        <div class="general-links"><a href="https://www.empack.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=976547187" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Thomas Dahl</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4723373737" class="contact-link"><i data-lucide="phone"></i>+4723373737</a> <a href="mailto:www@empack.no" class="contact-link"><i data-lucide="mail"></i>www@empack.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Thomas Dahl</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4723373737" class="contact-link"><i data-lucide="phone"></i>+4723373737</a><a href="mailto:www@empack.no" class="contact-link"><i data-lucide="mail"></i>www@empack.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1791,6 +1994,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>14 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=998877393" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1799,11 +2003,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 26, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med tømmer, trelast, byggevarer og sanitærutstyr</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=998877393" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Geir Hellerud</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4722304070" class="contact-link"><i data-lucide="phone"></i>+4722304070</a> <a href="mailto:geir.hellerud@nordictools.no" class="contact-link"><i data-lucide="mail"></i>geir.hellerud@nordictools.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Geir Hellerud</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4722304070" class="contact-link"><i data-lucide="phone"></i>+4722304070</a><a href="mailto:geir.hellerud@nordictools.no" class="contact-link"><i data-lucide="mail"></i>geir.hellerud@nordictools.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1822,6 +2029,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>15 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=950836792" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1830,11 +2038,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 16, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Regnskapsføring og bokføring</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=950836792" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Per-Henrik Ruud</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Per-Henrik Ruud</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1853,6 +2064,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>16 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.solregn.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=956623103" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1861,11 +2073,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 5, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Regnskapsføring og bokføring</span>
-                        <div class="general-links"><a href="https://www.solregn.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=956623103" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Nina Sollie Anderssen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:+4767067300" class="contact-link"><i data-lucide="phone"></i>+4767067300</a> <a href="mailto:post@solregn.no" class="contact-link"><i data-lucide="mail"></i>post@solregn.no</a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Nina Sollie Anderssen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767067300" class="contact-link"><i data-lucide="phone"></i>+4767067300</a><a href="mailto:post@solregn.no" class="contact-link"><i data-lucide="mail"></i>post@solregn.no</a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1884,6 +2099,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>18 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=917773475" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1892,11 +2108,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Brådalsstubben 20, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Drift av restauranter</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=917773475" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Ikke registrert</span><span class="contact-role">Styreleder/Eier</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Ikke registrert</span>
+                <div class="contact-role">Styreleder/Eier</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1915,6 +2134,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>19 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=933001466" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1923,11 +2143,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Industriveien 14, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Rengjøring av bygninger</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=933001466" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Flemming Jørgensen</span><span class="contact-role">Daglig leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Flemming Jørgensen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1946,6 +2169,7 @@
                         <div class="meta-row">
                             <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
                             <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=918562796" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                         </div>
                     </div>
                 </div>
@@ -1954,11 +2178,14 @@
                     <div class="info-row">
                         <span class="info-item"><i data-lucide="map-pin"></i>Masteveien 3, 1481 HAGAN</span>
                         <span class="info-item"><i data-lucide="briefcase"></i>Utleie av egen eller leid fast eiendom</span>
-                        <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="https://www.proff.no/bransjesøk?q=918562796" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
                     </div>
-                    <div class="contacts-section"><div class="contact-person">
-                <span class="contact-name">Satkunamaran Veluppillai</span><span class="contact-role">Daglig leder/Styrets leder</span><div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a> <a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
-            </div></div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Satkunamaran Veluppillai</span>
+                <div class="contact-role">Daglig leder/Styrets leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
                 </div>
             </div>
             
@@ -1970,7 +2197,7 @@
     </div>
 
     <div class="footer">
-        Generert 2026-02-04 10:49 · Data fra Brønnøysundregistrene<br>
+        Generert 2026-02-04 15:33 · Data fra Brønnøysundregistrene<br>
         <small>Score basert på: ansatte, bransje (skiftarbeid), offentlig sektor, forskning/campus</small>
     </div>
 
@@ -2022,6 +2249,22 @@
                 container.appendChild(card);
             });
         }
+
+        function showSyncModal() {
+            document.getElementById('sync-modal').style.display = 'flex';
+        }
+
+        function closeSyncModal() {
+            document.getElementById('sync-modal').style.display = 'none';
+        }
+
+        function copyCommand() {
+            navigator.clipboard.writeText(document.getElementById('sync-command').textContent);
+        }
+
+        document.getElementById('sync-modal').addEventListener('click', e => {
+            if (e.target.id === 'sync-modal') closeSyncModal();
+        });
     </script>
 </body>
 </html>

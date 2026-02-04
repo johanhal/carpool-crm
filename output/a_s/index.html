@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enriched Companies</title>
+    <title>Carpool CRM - Ås</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --ruter-red: #E60000;
@@ -14,16 +15,15 @@
             --ruter-blue: #002B79;
             --ruter-gray: #6D7196;
             --ruter-gray-light: #F8F8F8;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 12px;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--ruter-gray-light);
             color: var(--ruter-navy);
             line-height: 1.5;
@@ -36,315 +36,252 @@
             text-align: center;
         }
 
-        .header h1 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .header p {
+        .header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .header p { opacity: 0.9; }
+        .header .back-link {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
             opacity: 0.9;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
+        .header .back-link:hover { opacity: 1; }
+        .header { position: relative; }
 
-        .stats {
+        .stats-bar {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 2rem;
-            padding: 1.5rem;
+            padding: 1rem 2rem;
             background: white;
             border-bottom: 1px solid #e5e7eb;
             flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .stat {
-            text-align: center;
-        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--ruter-red); }
+        .stat-label { font-size: 0.7rem; color: var(--ruter-gray); text-transform: uppercase; }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--ruter-red);
-        }
+        .controls { display: flex; gap: 0.5rem; align-items: center; }
 
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--ruter-gray);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .toggle-map, .sync-sheets-btn {
-            padding: 0.6rem 1.2rem;
-            background: var(--ruter-red);
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: var(--ruter-navy);
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-            margin-left: 1rem;
+            font-size: 0.85rem;
+            transition: all 0.15s;
         }
+        .btn:hover { background: var(--ruter-blue); }
+        .btn.active { background: var(--ruter-red); }
+        .btn i { width: 16px; height: 16px; }
 
-        .toggle-map:hover, .sync-sheets-btn:hover {
-            background: var(--ruter-red-dark);
-        }
-
-        .sync-sheets-btn {
-            background: #2563eb;
-        }
-
-        .sync-sheets-btn:hover {
-            background: #1d4ed8;
-        }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal.visible {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            max-width: 600px;
-            width: 90%;
-            position: relative;
-        }
-
-        .modal-content h2 {
-            margin-bottom: 1rem;
+        .sort-group { display: flex; gap: 0.25rem; }
+        .sort-btn {
+            padding: 0.4rem 0.75rem;
+            background: #e5e7eb;
             color: var(--ruter-navy);
-        }
-
-        .modal-content p {
-            margin-bottom: 1rem;
-            color: #4b5563;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #9ca3af;
-        }
-
-        .modal-close:hover {
-            color: var(--ruter-navy);
-        }
-
-        .command-box {
-            display: flex;
-            gap: 0.5rem;
-            background: #f1f5f9;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .command-box code {
-            flex: 1;
-            font-family: monospace;
-            font-size: 0.9rem;
-            word-break: break-all;
-        }
-
-        .copy-btn {
-            padding: 0.4rem 0.8rem;
-            background: #2563eb;
-            color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: all 0.15s;
         }
-
-        .copy-btn:hover {
-            background: #1d4ed8;
-        }
-
-        .hint {
-            font-size: 0.85rem;
-            color: #6b7280;
-        }
-
-        .hint code {
-            background: #f1f5f9;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
+        .sort-btn:hover { background: #d1d5db; }
+        .sort-btn.active { background: var(--ruter-red); color: white; }
 
         #map {
-            height: 400px;
+            height: 350px;
             display: none;
-            margin: 1rem 2rem;
-            border-radius: 8px;
+            margin: 1rem auto;
+            max-width: 800px;
+            border-radius: var(--radius);
             border: 1px solid #e5e7eb;
         }
+        #map.visible { display: block; }
 
-        #map.visible {
-            display: block;
+        .cards-container {
+            padding: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        .table-container {
-            padding: 1rem 2rem 2rem;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .company-card {
             background: white;
-            border-radius: 8px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card-main { padding: 1rem 1.25rem; }
+
+        .card-header {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .rank-badge {
+            width: 36px;
+            height: 36px;
+            background: var(--ruter-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
             font-size: 0.85rem;
+            flex-shrink: 0;
         }
 
-        th {
-            background: #f8fafc;
-            padding: 0.75rem 0.75rem;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
-            cursor: pointer;
-            white-space: nowrap;
-            user-select: none;
+        .header-content { flex: 1; }
+        .company-name { font-size: 1rem; font-weight: 600; color: var(--ruter-navy); margin-bottom: 0.2rem; }
+
+        .meta-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        th:hover {
-            background: #f1f5f9;
+        .employee-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+            color: var(--ruter-gray);
         }
+        .employee-count i { width: 14px; height: 14px; }
 
-        th.sortable::after {
-            content: " ↕";
-            opacity: 0.3;
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
             font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .score-badge i { width: 11px; height: 11px; }
+        .score-high { background: #dcfce7; color: #166534; }
+        .score-medium { background: #fef3c7; color: #92400e; }
+        .score-low { background: #f3f4f6; color: #6b7280; }
+
+        .card-body { border-top: 1px solid #f1f5f9; padding-top: 0.75rem; }
+
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem 1.25rem;
+            margin-bottom: 0.5rem;
         }
 
-        th.sort-asc::after {
-            content: " ↑";
-            opacity: 1;
-        }
-
-        th.sort-desc::after {
-            content: " ↓";
-            opacity: 1;
-        }
-
-        td {
-            padding: 0.6rem 0.75rem;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: top;
-        }
-
-        tr:hover {
-            background: var(--ruter-red-light);
-        }
-
-        .company-name {
-            font-weight: 500;
-            color: var(--ruter-navy);
-            min-width: 180px;
-        }
-
-        .address {
-            color: var(--ruter-gray);
+        .info-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
             font-size: 0.8rem;
-            min-width: 150px;
-        }
-
-        .industry {
             color: var(--ruter-gray);
-            font-size: 0.8rem;
-            max-width: 150px;
+        }
+        .info-item i { width: 14px; height: 14px; flex-shrink: 0; }
+
+        .general-links {
+            display: inline-flex;
+            gap: 0.4rem;
+            margin-left: auto;
         }
 
-        .kontakt {
-            min-width: 120px;
-        }
-
-        .kontakt .role {
-            color: var(--ruter-gray);
+        .general-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
             font-size: 0.75rem;
-        }
-
-        .contact {
-            font-size: 0.8rem;
-            min-width: 140px;
-        }
-
-        .salgsnotater {
-            font-size: 0.8rem;
-            color: #374151;
-            max-width: 300px;
-        }
-
-        .expandable {
-            cursor: pointer;
-        }
-
-        .expandable .truncated {
-            display: inline;
-        }
-
-        .expandable .full {
-            display: none;
-        }
-
-        .expandable.expanded .truncated {
-            display: none;
-        }
-
-        .expandable.expanded .full {
-            display: inline;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .link {
             color: var(--ruter-blue);
             text-decoration: none;
         }
+        .general-link:hover { color: var(--ruter-red); }
+        .general-link i { width: 12px; height: 12px; }
 
-        .link:hover {
-            color: var(--ruter-red);
-            text-decoration: underline;
+        .contacts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
         }
 
-        .link-subtle {
-            color: #9ca3af;
+        .contact-card {
+            padding: 0.6rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .contact-header {
+            margin-bottom: 0.35rem;
+        }
+
+        .contact-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--ruter-navy);
+        }
+
+        .contact-role {
+            font-size: 0.7rem;
+            color: var(--ruter-gray);
+        }
+
+        .contact-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .contact-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--ruter-navy);
             text-decoration: none;
-            font-size: 0.75rem;
+            transition: all 0.15s;
         }
+        .contact-link:hover { background: var(--ruter-red-light); border-color: var(--ruter-red); color: var(--ruter-red); }
+        .contact-link i { width: 12px; height: 12px; flex-shrink: 0; }
 
-        .link-subtle:hover {
-            color: var(--ruter-red);
+        .sales-argument {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-top: 1px solid #fcd34d;
         }
+        .sales-argument i { width: 18px; height: 18px; color: #b45309; flex-shrink: 0; margin-top: 2px; }
+        .sales-argument p { font-size: 0.85rem; color: #78350f; }
 
         .footer {
             text-align: center;
@@ -353,571 +290,1305 @@
             font-size: 0.8rem;
         }
 
-        @media (max-width: 768px) {
-            .table-container {
-                padding: 0 1rem 1rem;
-            }
-            #map {
-                margin: 1rem;
-            }
+        @media (max-width: 640px) {
+            .cards-container { padding: 1rem; }
+            .stats-bar { gap: 1rem; padding: 0.75rem 1rem; }
+            .header .back-link { position: static; transform: none; margin-bottom: 0.5rem; justify-content: center; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Enriched Companies</h1>
-        <p>Ruters samkjøringspilot</p>
+        <a href="../" class="back-link"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Alle områder</a>
+        <h1>Ås</h1>
     </div>
 
-    <div class="stats">
+    <div class="stats-bar">
         <div class="stat">
             <div class="stat-value">32</div>
             <div class="stat-label">Bedrifter</div>
         </div>
         <div class="stat">
             <div class="stat-value">5,040</div>
-            <div class="stat-label">Ansatte totalt</div>
+            <div class="stat-label">Ansatte</div>
         </div>
-        <button class="toggle-map" onclick="toggleMap()">Vis kart</button>
-        <button class="sync-sheets-btn" onclick="showSyncModal()">Sync til Sheets</button>
+        <div class="controls">
+            <span style="font-size:0.8rem;color:var(--ruter-gray)">Sorter:</span>
+            <div class="sort-group">
+                <button class="sort-btn active" onclick="sortCards('score')">Potensial</button>
+                <button class="sort-btn" onclick="sortCards('employees')">Ansatte</button>
+                <button class="sort-btn" onclick="sortCards('name')">Navn</button>
+            </div>
+            <button class="btn" onclick="toggleMap()"><i data-lucide="map"></i>Kart</button>
+            <button class="btn" onclick="showSyncModal()" style="background:#2563eb"><i data-lucide="upload-cloud"></i>Sheets</button>
+        </div>
     </div>
 
-    <!-- Sync Modal -->
-    <div id="sync-modal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeSyncModal()">&times;</span>
-            <h2>Sync til Google Sheets</h2>
-            <p>Kjor denne kommandoen i terminalen for a synkronisere til Sheets:</p>
-            <div class="command-box">
-                <code id="sync-command">python google_sheets.py sync "enriched_companies.csv"</code>
-                <button class="copy-btn" onclick="copyCommand()">Kopier</button>
+    <div id="sync-modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
+        <div style="background:white;padding:2rem;border-radius:12px;max-width:500px;width:90%;position:relative">
+            <span onclick="closeSyncModal()" style="position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#9ca3af">&times;</span>
+            <h2 style="margin-bottom:1rem;color:var(--ruter-navy)">Sync til Google Sheets</h2>
+            <p style="margin-bottom:1rem;color:#4b5563">Kjør denne kommandoen i terminalen:</p>
+            <div style="display:flex;gap:0.5rem;background:#f1f5f9;padding:1rem;border-radius:8px;margin-bottom:1rem">
+                <code id="sync-command" style="flex:1;font-family:monospace;font-size:0.85rem;word-break:break-all">python google_sheets.py sync "output/a_s/bedrifter.csv"</code>
+                <button class="btn" onclick="copyCommand()">Kopier</button>
             </div>
-            <p class="hint">Forste gang? Kjor <code>python google_sheets.py setup</code> forst.</p>
         </div>
     </div>
 
     <div id="map"></div>
 
-    <div class="table-container">
-        <table id="companies-table">
-            <thead>
-                <tr>
-                    <th class="sortable" data-sort="string">Bedrift</th>
-                    <th class="sortable" data-sort="number">Ansatte</th>
-                    <th class="sortable" data-sort="string">Adresse</th>
-                    <th class="sortable" data-sort="string">Bransje</th>
-                    <th>Nettside</th>
-                    <th>Kontaktperson</th>
-                    <th>Kontaktinfo</th>
-                    <th>Salgsargumenter</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                
-            <tr data-lat="59.67079709209151" data-lon="10.795325549152027">
-                <td class="company-name">JAN WOLD EIENDOM AS</td>
-                <td class="text-right">5</td>
-                <td class="address">Myrveien 10, 1434 ÅS</td>
-                <td class="industry">Utleie av egen eller leid fast eiendom</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=829651602" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.667750565040286" data-lon="10.794331692862162">
-                <td class="company-name">ÅSKRYSSET AUTO AS</td>
-                <td class="text-right">7</td>
-                <td class="address">Langbakken 14, 1434 ÅS</td>
-                <td class="industry">Reparasjon og vedlikehold av motorvogner</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@askrysset.no" class="link">post@askrysset.no</a><br><a href="tel:+4764941100" class="link">+4764941100</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=996402029" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.671884309171276" data-lon="10.796935671530326">
-                <td class="company-name">FILMASSIST AS</td>
-                <td class="text-right">7</td>
-                <td class="address">Myrveien 18, 1434 ÅS</td>
-                <td class="industry">Produksjon av film, video og fjernsynsprogrammer</td>
-                <td class="text-center"><a href="https://www.filmassistentene.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4741163456" class="link">+4741163456</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=994164074" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.6656689717858" data-lon="10.759826167041197">
-                <td class="company-name">NORDISKT GENRESURSCENTER</td>
-                <td class="text-right">5</td>
-                <td class="address">Oluf Thesens vei 6, 1433 ÅS</td>
-                <td class="industry">Tjenester tilknyttet skogbruk</td>
-                <td class="text-center"><a href="https://www.nordgren.org" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4640536640" class="link">+4640536640</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=993231371" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66629571431088" data-lon="10.774175845417348">
-                <td class="company-name">NIBIO - NORSK INSTITUTT FOR BIOØKONOMI</td>
-                <td class="text-right">780</td>
-                <td class="address">Høgskoleveien 7, 1433 ÅS</td>
-                <td class="industry">Forskning og eksperimentell utvikling innenfor nat...</td>
-                <td class="text-center"><a href="https://www.nibio.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@nibio.no" class="link">post@nibio.no</a><br><a href="tel:03246" class="link">03246</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=988983837" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.64859513079558" data-lon="10.787804114712538">
-                <td class="company-name">NT KIOSK Dao thi Duong Nu</td>
-                <td class="text-right">18</td>
-                <td class="address">Brekkeveien 3, 1430 ÅS</td>
-                <td class="industry">Detaljhandel med bredt vareutvalg med hovedvekt på...</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:tuanmemo@yahoo.com" class="link">tuanmemo@yahoo.com</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=983570488" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66912547401742" data-lon="10.79893819830569">
-                <td class="company-name">ÅS IL FOTBALL</td>
-                <td class="text-right">16</td>
-                <td class="address">Idrettsveien 14, 1434 ÅS</td>
-                <td class="industry">Aktiviteter i idrettslag og -klubber</td>
-                <td class="text-center"><a href="https://www.asfotball.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@asfotball.no" class="link">post@asfotball.no</a><br><a href="tel:+4799351133" class="link">+4799351133</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=983530559" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.667813833552415" data-lon="10.795943671754543">
-                <td class="company-name">KRISE- OG INCESTSENTERET I FOLLO IKS</td>
-                <td class="text-right">47</td>
-                <td class="address">Langbakken 9, 1434 ÅS</td>
-                <td class="industry">Andre botilbud innenfor sosiale tjenester ikke nev...</td>
-                <td class="text-center"><a href="https://www.kisif.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@kisif.no" class="link">post@kisif.no</a><br><a href="tel:+4764972300" class="link">+4764972300</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=979211902" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.686570074471256" data-lon="10.81147410335163">
-                <td class="company-name">STIFTELSEN STEINERSKOLEN I ÅS</td>
-                <td class="text-right">37</td>
-                <td class="address">Haugerudveien 25, 1434 ÅS</td>
-                <td class="industry">Ordinær grunnskoleundervisning</td>
-                <td class="text-center"><a href="https://www.aas.steinerskolen.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:aas@steinerskolen.no" class="link">aas@steinerskolen.no</a><br><a href="tel:+4764977660" class="link">+4764977660</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=976756118" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66655770654772" data-lon="10.769941119389193">
-                <td class="company-name">VITENPARKEN CAMPUS ÅS STI</td>
-                <td class="text-right">60</td>
-                <td class="address">Høgskoleveien 1, 1433 ÅS</td>
-                <td class="industry">Drift av kulturhistoriske museer</td>
-                <td class="text-center"><a href="https://www.vitenparken.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:resepsjon@vitenparken.no" class="link">resepsjon@vitenparken.no</a><br><a href="tel:+4764966280" class="link">+4764966280</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=971255730" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66926172832721" data-lon="10.760559604428375">
-                <td class="company-name">VETERINÆRINSTITUTTET</td>
-                <td class="text-right">361</td>
-                <td class="address">Arboretveien 57, 1433 ÅS</td>
-                <td class="industry">Forskning og eksperimentell utvikling innenfor nat...</td>
-                <td class="text-center"><a href="https://www.vetinst.no/" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:postmottak@vetinst.no" class="link">postmottak@vetinst.no</a><br><a href="tel:+4723216000" class="link">+4723216000</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=970955623" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66636100263852" data-lon="10.768009761714662">
-                <td class="company-name">NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU)</td>
-                <td class="text-right">2340</td>
-                <td class="address">Universitetstunet 3, 1433 ÅS</td>
-                <td class="industry">Undervisning ved universiteter</td>
-                <td class="text-center"><a href="https://www.nmbu.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@nmbu.no" class="link">post@nmbu.no</a><br><a href="tel:+4767230000" class="link">+4767230000</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=969159570" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.67169109369452" data-lon="10.801854673096567">
-                <td class="company-name">SCHYTZ AS</td>
-                <td class="text-right">5</td>
-                <td class="address">Langbakken 58, 1434 ÅS</td>
-                <td class="industry">Annen teknisk konsulentvirksomhet</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:harald@schytz.no" class="link">harald@schytz.no</a><br><a href="tel:+4764973595" class="link">+4764973595</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=992873175" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66991214422164" data-lon="10.795736324997149">
-                <td class="company-name">ÅS ELEKTRISKE AS</td>
-                <td class="text-right">13</td>
-                <td class="address">Myrveien 4, 1434 ÅS</td>
-                <td class="industry">Elektrisk installasjonsarbeid</td>
-                <td class="text-center"><a href="https://www.aas-elektriske.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:firmapost@aas-elektriske.no" class="link">firmapost@aas-elektriske.no</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=960433440" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66776500548771" data-lon="10.772923659253959">
-                <td class="company-name">STIFTELSEN ÅKEBAKKE BARNEHAGE</td>
-                <td class="text-right">20</td>
-                <td class="address">Utveien 2, 1433 ÅS</td>
-                <td class="industry">Førskoleundervisning og drift av barnehager</td>
-                <td class="text-center"><a href="https://akebakke.barnehage.no/" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@akebakke.org" class="link">post@akebakke.org</a><br><a href="tel:+4748449255" class="link">+4748449255</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=965324410" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66573178091431" data-lon="10.75601064700807">
-                <td class="company-name">NLR REGNSKAP AS</td>
-                <td class="text-right">31</td>
-                <td class="address">Osloveien 1, 1433 ÅS</td>
-                <td class="industry">Regnskapsføring og bokføring</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=833028812" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66733743127569" data-lon="10.794657603310553">
-                <td class="company-name">AAS BILVERKSTED ERIKSEN AS</td>
-                <td class="text-right">7</td>
-                <td class="address">Langbakken 12, 1434 ÅS</td>
-                <td class="industry">Reparasjon og vedlikehold av motorvogner</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:aasbil@aasbil.no" class="link">aasbil@aasbil.no</a><br><a href="tel:+4764940068" class="link">+4764940068</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=910045717" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.65035310079462" data-lon="10.788710420207137">
-                <td class="company-name">FOLLO FUTURA AS</td>
-                <td class="text-right">11</td>
-                <td class="address">Brekkeveien 43, 1430 ÅS</td>
-                <td class="industry">Arbeidstrening og varig tilrettelagt arbeid</td>
-                <td class="text-center"><a href="https://www.follo-futura.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:info@follo-futura.no" class="link">info@follo-futura.no</a><br><a href="tel:+4764942165" class="link">+4764942165</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=919701501" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66798057087862" data-lon="10.794917473781465">
-                <td class="company-name">HS MC-SENTER AS</td>
-                <td class="text-right">5</td>
-                <td class="address">Langbakken 16, 1434 ÅS</td>
-                <td class="industry">Detaljhandel med motorsykler og tilhørende deler o...</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:ronny@hsmcsenter.no" class="link">ronny@hsmcsenter.no</a><br><a href="tel:+4797598591" class="link">+4797598591</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=916251335" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.67053030633717" data-lon="10.796639457216612">
-                <td class="company-name">AMADA NORWAY AS</td>
-                <td class="text-right">9</td>
-                <td class="address">Myrveien 12, 1434 ÅS</td>
-                <td class="industry">Engroshandel med maskiner og utstyr ellers</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4764973100" class="link">+4764973100</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=933966674" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.67057348165426" data-lon="10.795585262270704">
-                <td class="company-name">ÅS RØRLEGGERBEDRIFT AS</td>
-                <td class="text-right">7</td>
-                <td class="address">Myrveien 8, 1434 ÅS</td>
-                <td class="industry">VVS-arbeid</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4764975060" class="link">+4764975060</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=947941755" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.666516339731224" data-lon="10.77114266883089">
-                <td class="company-name">STUDENTSAMSKIPNADEN I ÅS</td>
-                <td class="text-right">142</td>
-                <td class="address">Christian Magnus Falsens vei 3, 1433 ÅS</td>
-                <td class="industry">Aktiviteter i andre medlemsorganisasjoner ellers</td>
-                <td class="text-center"><a href="https://www.sias.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4764966301" class="link">+4764966301</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=955222261" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.67120902574711" data-lon="10.795874956871858">
-                <td class="company-name">ÅSPRO ARBEID OG KOMPETANSE AS</td>
-                <td class="text-right">58</td>
-                <td class="address">Myrveien 14, 1434 ÅS</td>
-                <td class="industry">Arbeidstrening og varig tilrettelagt arbeid</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:aaspro@aaspro.no" class="link">aaspro@aaspro.no</a><br><a href="tel:+4764941176" class="link">+4764941176</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=959908036" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.666854353625325" data-lon="10.776699851587654">
-                <td class="company-name">AGRIBIOTIX AS</td>
-                <td class="text-right">9</td>
-                <td class="address">Høgskoleveien 12, 1433 ÅS</td>
-                <td class="industry">Produksjon av plantevern-, skadedyr- og desinfeksj...</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=929105869" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.665950486979455" data-lon="10.811201196351403">
-                <td class="company-name">RUSTAD SKOLE</td>
-                <td class="text-right">81</td>
-                <td class="address">Bestemors vei 2, 1434 ÅS</td>
-                <td class="industry">Ordinær grunnskoleundervisning</td>
-                <td class="text-center"><a href="https://www.rustadskole.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:rustad.skole@as.kommune.no" class="link">rustad.skole@as.kommune.no</a><br><a href="tel:+4764962900" class="link">+4764962900</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=974603217" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.64894234563765" data-lon="10.787107471044628">
-                <td class="company-name">COOP ØST SA AVD 3313 EXTRA RAVEIEN</td>
-                <td class="text-right">21</td>
-                <td class="address">Brekkeveien 1, 1430 ÅS</td>
-                <td class="industry">Detaljhandel med bredt vareutvalg med hovedvekt på...</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:coopost@coop.no" class="link">coopost@coop.no</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=978618529" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.67039274041565" data-lon="10.800449702333507">
-                <td class="company-name">ÅS UNGDOMSSKOLE</td>
-                <td class="text-right">72</td>
-                <td class="address">Mellomveien 4, 1434 ÅS</td>
-                <td class="industry">Ordinær grunnskoleundervisning</td>
-                <td class="text-center"><a href="https://www.asungdomsskole.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:asung@as.kommune.no" class="link">asung@as.kommune.no</a><br><a href="tel:+4764962600" class="link">+4764962600</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=974603268" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.656627810500964" data-lon="10.793382442646188">
-                <td class="company-name">MOER SYKEHJEM</td>
-                <td class="text-right">238</td>
-                <td class="address">Tunveien 2, 1430 ÅS</td>
-                <td class="industry">Sykehjemstjenester</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@as.kommune.no" class="link">post@as.kommune.no</a><br><a href="tel:+4764962000" class="link">+4764962000</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=974603314" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.66829191173413" data-lon="10.76268373482877">
-                <td class="company-name">NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU) DYRESYKEHUSET</td>
-                <td class="text-right">506</td>
-                <td class="address">Elizabeth Stephansens vei 15, 1433 ÅS</td>
-                <td class="industry">Undervisning ved universiteter</td>
-                <td class="text-center"><a href="https://www.nmbu.no" target="_blank" class="link">Besøk</a></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:post@nmbu.no" class="link">post@nmbu.no</a><br><a href="tel:+4767230000" class="link">+4767230000</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=974714442" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.655801251670525" data-lon="10.792741956086559">
-                <td class="company-name">TUNVEIEN BARNEHAGE</td>
-                <td class="text-right">54</td>
-                <td class="address">Tunveien 13, 1430 ÅS</td>
-                <td class="industry">Førskoleundervisning og drift av barnehager</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="mailto:nina.solli.wiik@as.kommune.no" class="link">nina.solli.wiik@as.kommune.no</a><br><a href="tel:+4764962741" class="link">+4764962741</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=993266043" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.65654262782467" data-lon="10.791794686532471">
-                <td class="company-name">ÅS KOMMUNE AMBULERENDE PSYKISK HELSE SØR</td>
-                <td class="text-right">56</td>
-                <td class="address">Tunveien 1, 1430 ÅS</td>
-                <td class="industry">Sykepleietjenester og andre helsetjenester i hjemm...</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4764962750" class="link">+4764962750</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=987906766" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            <tr data-lat="59.664486365044986" data-lon="10.779113236668522">
-                <td class="company-name">BRØNNERUD SFO</td>
-                <td class="text-right">12</td>
-                <td class="address">Drøbakveien, 1430 ÅS</td>
-                <td class="industry">Dagaktivitetstilbud for barn</td>
-                <td class="text-center"></td>
-                <td class="kontakt"></td>
-                <td class="contact"><a href="tel:+4764964231" class="link">+4764964231</a></td>
-                <td class="salgsnotater"></td>
-                <td class="text-center"><a href="https://www.proff.no/bransjesøk?q=987907746" target="_blank" class="link-subtle">Proff</a></td>
-            </tr>
-        
-            </tbody>
-        </table>
+    <div id="cards" class="cards-container">
+
+        <article class="company-card" data-score="70" data-employees="2340" data-name="NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU)">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#1</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU)</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>2340 ansatte</span>
+                            <span class="score-badge score-high"><i data-lucide="target"></i>70%</span>
+                            <div class="general-links"><a href="https://www.nmbu.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:post@nmbu.no" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=969159570" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Universitetstunet 3, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Undervisning ved universiteter</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Jan Petter Stenberg</span>
+                <div class="contact-role">Personal- og organisasjonsdirektør (HR-direktør)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4792425576" class="contact-link"><i data-lucide="phone"></i>+47 92 42 55 76</a><a href="mailto:jan.petter.stenberg@nmbu.no" class="contact-link"><i data-lucide="mail"></i>jan.petter.stenberg@nmbu.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Kjersti Sørlie Rimer</span>
+                <div class="contact-role">Eiendomsdirektør</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767230705" class="contact-link"><i data-lucide="phone"></i>+47 67 23 07 05</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Anette Sæther Haagensen</span>
+                <div class="contact-role">Seniorrådgiver HR</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767230220" class="contact-link"><i data-lucide="phone"></i>+47 67 23 02 20</a><a href="mailto:anette.sather.haagensen@nmbu.no" class="contact-link"><i data-lucide="mail"></i>anette.sather.haagensen@nmbu.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Siri Fjellheim</span>
+                <div class="contact-role">Rektor</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767232801" class="contact-link"><i data-lucide="phone"></i>+47 67 23 28 01</a><a href="mailto:siri.fjellheim@nmbu.no" class="contact-link"><i data-lucide="mail"></i>siri.fjellheim@nmbu.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Norges ledende universitet for bærekraft. Samlokalisert med NIBIO, Veterinærinstituttet og Vitenparken - stort samkjøringspotensial på Campus Ås. Smart Campus-prosjekt for energi- og mobilitet.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="70" data-employees="506" data-name="NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU) DYRESYKEHUSET">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#2</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU) DYRESYKEHUSET</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>506 ansatte</span>
+                            <span class="score-badge score-high"><i data-lucide="target"></i>70%</span>
+                            <div class="general-links"><a href="https://www.nmbu.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:smadyr@nmbu.no" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=974714442" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Elizabeth Stephansens vei 15, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Undervisning ved universiteter</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Anne Storset</span>
+                <div class="contact-role">Dekan Veterinærhøgskolen</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4767232303" class="contact-link"><i data-lucide="phone"></i>+47 67 23 23 03</a><a href="mailto:anne.storset@nmbu.no" class="contact-link"><i data-lucide="mail"></i>anne.storset@nmbu.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Jan Petter Stenberg</span>
+                <div class="contact-role">Personal- og organisasjonsdirektør (NMBU)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4792425576" class="contact-link"><i data-lucide="phone"></i>+47 92 42 55 76</a><a href="mailto:jan.petter.stenberg@nmbu.no" class="contact-link"><i data-lucide="mail"></i>jan.petter.stenberg@nmbu.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Døgnåpen klinikk med skiftarbeid - perfekt for samkjøring. Samlokalisert med Veterinærinstituttet i samme bygg. Del av NMBU - deler HR-avdeling.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="60" data-employees="56" data-name="ÅS KOMMUNE AMBULERENDE PSYKISK HELSE SØR">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#3</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅS KOMMUNE AMBULERENDE PSYKISK HELSE SØR</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>56 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>60%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=987906766" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Tunveien 1, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Sykepleietjenester og andre helsetjenester i hjemmet</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Avdelingsleder</span>
+                <div class="contact-role">+47 64 96 27 50</div>
+            </div>
+            <div class="contact-links"><a href="tel:post@as.kommune.no" class="contact-link"><i data-lucide="phone"></i>post@as.kommune.no</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Ambulerende hjemmetjeneste med mange på samme vakter. Del av Ås kommune. Nabo til Moer Sykehjem og Tunveien Barnehage - samkjøringspotensial mellom kommunale tjenester.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="60" data-employees="780" data-name="NIBIO - NORSK INSTITUTT FOR BIOØKONOMI">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#4</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NIBIO - NORSK INSTITUTT FOR BIOØKONOMI</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>780 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>60%</span>
+                            <div class="general-links"><a href="https://www.nibio.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:post@nibio.no" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=988983837" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Høgskoleveien 7, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Forskning og eksperimentell utvikling innenfor naturvitenskap og teknikk</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Randi Hesjedal</span>
+                <div class="contact-role">Organisasjonsdirektør (leder HR og Eiendom/Drift)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4791168009" class="contact-link"><i data-lucide="phone"></i>+47 911 68 009</a><a href="mailto:randi.hesjedal@nibio.no" class="contact-link"><i data-lucide="mail"></i>randi.hesjedal@nibio.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Adrian Solsvik</span>
+                <div class="contact-role">Seniorrådgiver HR</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4797017821" class="contact-link"><i data-lucide="phone"></i>+47 970 17 821</a><a href="mailto:adrian.solsvik@nibio.no" class="contact-link"><i data-lucide="mail"></i>adrian.solsvik@nibio.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Anne-Berit Olsberg</span>
+                <div class="contact-role">Seniorrådgiver Eiendom/Drift (Miljøfyrtårn-ansvarlig)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4790066892" class="contact-link"><i data-lucide="phone"></i>+47 900 66 892</a><a href="mailto:anne-berit.olsberg@nibio.no" class="contact-link"><i data-lucide="mail"></i>anne-berit.olsberg@nibio.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Ivar Horneland Kristensen</span>
+                <div class="contact-role">Administrerende direktør</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4792030359" class="contact-link"><i data-lucide="phone"></i>+47 920 30 359</a><a href="mailto:ivar.kristensen@nibio.no" class="contact-link"><i data-lucide="mail"></i>ivar.kristensen@nibio.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Miljøfyrtårn-sertifisert forskningsinstitutt (2024, 0 avvik). Bærekraft er kjernevirksomheten. Samlokalisert med NMBU, Veterinærinstituttet og Vitenparken - perfekt for samkjøring mellom institusjonene.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="50" data-employees="361" data-name="VETERINÆRINSTITUTTET">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#5</div>
+                    <div class="header-content">
+                        <h2 class="company-name">VETERINÆRINSTITUTTET</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>361 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>50%</span>
+                            <div class="general-links"><a href="https://www.vetinst.no/" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:postmottak@vetinst.no" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=970955623" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Arboretveien 57, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Forskning og eksperimentell utvikling innenfor naturvitenskap og teknikk</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Anne Kristin Kalheim</span>
+                <div class="contact-role">Personalsjef</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4723216020" class="contact-link"><i data-lucide="phone"></i>+47 23 21 60 20</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Gun Peggy Strømstad Knudsen</span>
+                <div class="contact-role">Administrerende direktør</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4723216000" class="contact-link"><i data-lucide="phone"></i>+47 23 21 60 00</a><a href="mailto:postmottak@vetinst.no" class="contact-link"><i data-lucide="mail"></i>postmottak@vetinst.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Statlig forskningsinstitutt i nytt miljøklasse 1-bygg på Campus Ås. Samlokalisert med NMBU Dyresykehuset, NIBIO og Vitenparken - ideelt for samkjøring mellom institusjonene.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="40" data-employees="238" data-name="MOER SYKEHJEM">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#6</div>
+                    <div class="header-content">
+                        <h2 class="company-name">MOER SYKEHJEM</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>238 ansatte</span>
+                            <span class="score-badge score-medium"><i data-lucide="target"></i>40%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:post@as.kommune.no" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=974603314" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Tunveien 2, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Sykehjemstjenester</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Tom-Arne Torfoss</span>
+                <div class="contact-role">Enhetsleder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764962500" class="contact-link"><i data-lucide="phone"></i>+47 64 96 25 00</a><a href="mailto:post@as.kommune.no" class="contact-link"><i data-lucide="mail"></i>post@as.kommune.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Skiftarbeid døgnet rundt - ideelt for samkjøring. Del av Ås kommune. Nabo til Tunveien Barnehage og Ås Kommune Ambulerende Psykisk Helse - samkjøringspotensial mellom kommunale tjenester.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="30" data-employees="142" data-name="STUDENTSAMSKIPNADEN I ÅS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#7</div>
+                    <div class="header-content">
+                        <h2 class="company-name">STUDENTSAMSKIPNADEN I ÅS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>142 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://www.sias.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:postmottak@sias.no" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=955222261" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Christian Magnus Falsens vei 3, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Aktiviteter i andre medlemsorganisasjoner ellers</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Pål Magnus Løken</span>
+                <div class="contact-role">Administrerende direktør</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4793035654" class="contact-link"><i data-lucide="phone"></i>+47 930 35 654</a><a href="mailto:pml@sias.no" class="contact-link"><i data-lucide="mail"></i>pml@sias.no</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Kim A. Nielsen</span>
+                <div class="contact-role">Styreleder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4798897249" class="contact-link"><i data-lucide="phone"></i>+47 988 97 249</a><a href="mailto:kimnie0504@gmail.com" class="contact-link"><i data-lucide="mail"></i>kimnie0504@gmail.com</a></div>
+        </div><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Marit Raaf</span>
+                <div class="contact-role">Studentlivskoordinator</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:marit.raaf@sias.no" class="contact-link"><i data-lucide="mail"></i>marit.raaf@sias.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Betjener studenter og ansatte på Campus Ås. Mange med faste arbeidstider innen kantine, bolig og studentvelferd. Samlokalisert med NMBU, NIBIO og Veterinærinstituttet.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="30" data-employees="81" data-name="RUSTAD SKOLE">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#8</div>
+                    <div class="header-content">
+                        <h2 class="company-name">RUSTAD SKOLE</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>81 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://www.rustadskole.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=974603217" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Bestemors vei 2, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Ordinær grunnskoleundervisning</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Olav-Helge Karlsen</span>
+                <div class="contact-role">Rektor</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764962901" class="contact-link"><i data-lucide="phone"></i>+47 64 96 29 01</a><a href="mailto:Olav-Helge.Karlsen@as.kommune.no" class="contact-link"><i data-lucide="mail"></i>Olav-Helge.Karlsen@as.kommune.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Ny og moderne barneskole med faste arbeidstider. Del av Ås kommune - samkjøring støtter kommunens klimamål. Nærhet til Ås Ungdomsskole og Brønnerud SFO.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="30" data-employees="72" data-name="ÅS UNGDOMSSKOLE">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#9</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅS UNGDOMSSKOLE</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>72 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://www.asungdomsskole.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=974603268" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Mellomveien 4, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Ordinær grunnskoleundervisning</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Tone Anett Dahlsrud</span>
+                <div class="contact-role">Rektor</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4745731580" class="contact-link"><i data-lucide="phone"></i>+47 457 31 580</a><a href="mailto:toneanett.dahlsrud@as.kommune.no" class="contact-link"><i data-lucide="mail"></i>toneanett.dahlsrud@as.kommune.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Sentral beliggenhet i Ås sentrum med faste arbeidstider. Del av Ås kommune - samkjøring støtter kommunens miljømål. Nærhet til Rustad Skole og andre kommunale tjenester.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="30" data-employees="7" data-name="FILMASSIST AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#10</div>
+                    <div class="header-content">
+                        <h2 class="company-name">FILMASSIST AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://www.filmassistentene.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=994164074" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Myrveien 18, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av film, video og fjernsynsprogrammer</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Kim Rune Gulland</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4741163456" class="contact-link"><i data-lucide="phone"></i>+47 41 16 34 56</a><a href="mailto:kim@filmassist.no" class="contact-link"><i data-lucide="mail"></i>kim@filmassist.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Filmassistentbyrå med lang erfaring. Kreativ bransje med prosjektbasert arbeid. Lokalisert i Myrveien med Åspro, Ås Elektriske og Amada Norway i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="30" data-employees="9" data-name="AGRIBIOTIX AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#11</div>
+                    <div class="header-content">
+                        <h2 class="company-name">AGRIBIOTIX AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>9 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="https://agribiotix.com" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=929105869" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Høgskoleveien 12, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Produksjon av plantevern-, skadedyr- og desinfeksjonsmidler og andre landbrukskjemiske produkter</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Tage Thorstensen</span>
+                <div class="contact-role">Daglig leder og styreleder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4740200909" class="contact-link"><i data-lucide="phone"></i>+47 402 00 909</a><a href="mailto:tage.thorstensen@nibio.no" class="contact-link"><i data-lucide="mail"></i>tage.thorstensen@nibio.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Biotech-oppstart med fokus på bærekraftige løsninger. Spin-off fra NIBIO/NMBU. Samlokalisert med forskningsinstitusjonene på Campus Ås.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="30" data-employees="54" data-name="TUNVEIEN BARNEHAGE">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#12</div>
+                    <div class="header-content">
+                        <h2 class="company-name">TUNVEIEN BARNEHAGE</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>54 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>30%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=993266043" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Tunveien 13, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Førskoleundervisning og drift av barnehager</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Nina Solli Wiik</span>
+                <div class="contact-role">Styrer</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764962741" class="contact-link"><i data-lucide="phone"></i>+47 64 96 27 41</a><a href="mailto:nina.solli.wiik@as.kommune.no" class="contact-link"><i data-lucide="mail"></i>nina.solli.wiik@as.kommune.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Kommunal barnehage med faste arbeidstider (07:15-16:45). Samlokalisert med Moer Sykehjem og Ås Kommune Ambulerende Psykisk Helse - samkjøringspotensial.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="20" data-employees="37" data-name="STIFTELSEN STEINERSKOLEN I ÅS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#13</div>
+                    <div class="header-content">
+                        <h2 class="company-name">STIFTELSEN STEINERSKOLEN I ÅS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>37 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="https://www.aas.steinerskolen.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=976756118" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Haugerudveien 25, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Ordinær grunnskoleundervisning</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Eli Moe</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764977660" class="contact-link"><i data-lucide="phone"></i>+47 64 97 76 60</a><a href="mailto:aas@steinerskolen.no" class="contact-link"><i data-lucide="mail"></i>aas@steinerskolen.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Privat skole med miljøbevisst profil og faste skoletider. Landlige omgivelser mellom Ski og Ås sentrum.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="20" data-employees="20" data-name="STIFTELSEN ÅKEBAKKE BARNEHAGE">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#14</div>
+                    <div class="header-content">
+                        <h2 class="company-name">STIFTELSEN ÅKEBAKKE BARNEHAGE</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>20 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="https://akebakke.barnehage.no/" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=965324410" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Utveien 2, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Førskoleundervisning og drift av barnehager</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Vera Bue</span>
+                <div class="contact-role">Styrer</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4748449255" class="contact-link"><i data-lucide="phone"></i>+47 48 44 92 55</a><a href="mailto:post@akebakke.org" class="contact-link"><i data-lucide="mail"></i>post@akebakke.org</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Barnehage for ansattes og studenters barn på Campus Ås. Faste arbeidstider (07:30-16:30). Samlokalisert med NMBU, NIBIO og Veterinærinstituttet.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="20" data-employees="58" data-name="ÅSPRO ARBEID OG KOMPETANSE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#15</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅSPRO ARBEID OG KOMPETANSE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>58 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="https://www.aaspro.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=959908036" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Myrveien 14, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Arbeidstrening og varig tilrettelagt arbeid</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Ann Rovena Vasquez</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764941176" class="contact-link"><i data-lucide="phone"></i>+47 64 94 11 76</a><a href="mailto:aaspro@aaspro.no" class="contact-link"><i data-lucide="mail"></i>aaspro@aaspro.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Arbeidsinkluderingsbedrift med mange ansatte på samme arbeidstider. Lokalisert i Myrveien industriområde med Ås Elektriske, Amada Norway og Filmassist i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="20" data-employees="60" data-name="VITENPARKEN CAMPUS ÅS STI">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#16</div>
+                    <div class="header-content">
+                        <h2 class="company-name">VITENPARKEN CAMPUS ÅS STI</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>60 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>20%</span>
+                            <div class="general-links"><a href="https://www.vitenparken.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=971255730" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Høgskoleveien 1, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Drift av kulturhistoriske museer</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Solveig Arnesen</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764808600" class="contact-link"><i data-lucide="phone"></i>+47 64 80 86 00</a><a href="mailto:resepsjon@vitenparken.no" class="contact-link"><i data-lucide="mail"></i>resepsjon@vitenparken.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Vitensenter for miljø og bærekraft. Formidler miljøkunnskap - perfekt match for samkjøringsbudskap. Samlokalisert med NMBU, NIBIO og Veterinærinstituttet på Campus Ås.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="10" data-employees="21" data-name="COOP ØST SA AVD 3313 EXTRA RAVEIEN">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#17</div>
+                    <div class="header-content">
+                        <h2 class="company-name">COOP ØST SA AVD 3313 EXTRA RAVEIEN</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>21 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=978618529" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Brekkeveien 1, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med bredt vareutvalg med hovedvekt på nærings- og nytelsesmidler</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Butikksjef</span>
+                <div class="contact-role">+47 64 94 21 65</div>
+            </div>
+            <div class="contact-links"><a href="tel:coopost@coop.no" class="contact-link"><i data-lucide="phone"></i>coopost@coop.no</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Dagligvarebutikk med skiftarbeid. Del av Coop-konsernet med bærekraftsfokus. Lokalisert i Brekkeveien handelsområde med NT Kiosk og Follo Futura i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="10" data-employees="31" data-name="NLR REGNSKAP AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#18</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NLR REGNSKAP AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>31 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=833028812" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Osloveien 1, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Regnskapsføring og bokføring</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Inger Smågård</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4748157434" class="contact-link"><i data-lucide="phone"></i>+47 48 15 74 34</a><a href="mailto:inger.smagard@nlr.no" class="contact-link"><i data-lucide="mail"></i>inger.smagard@nlr.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Del av Norsk Landbruksrådgiving-konsernet med landbruksfokus og bærekraftsprofil. Typiske kontoratider (08-16). Nær NMBU og Campus Ås.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="10" data-employees="47" data-name="KRISE- OG INCESTSENTERET I FOLLO IKS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#19</div>
+                    <div class="header-content">
+                        <h2 class="company-name">KRISE- OG INCESTSENTERET I FOLLO IKS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>47 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>10%</span>
+                            <div class="general-links"><a href="https://www.kisif.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=979211902" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Langbakken 9, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Andre botilbud innenfor sosiale tjenester ikke nevnt annet sted</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Anne Berit Odenmarck</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764972300" class="contact-link"><i data-lucide="phone"></i>+47 64 97 23 00</a><a href="mailto:anne.o@kisif.no" class="contact-link"><i data-lucide="mail"></i>anne.o@kisif.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Interkommunalt selskap med døgnbemanning og stabil arbeidsstokk. Lokalisert i Langbakken industriområde med Åskrysset Auto, Aas Bilverksted og HS MC-Senter i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="16" data-name="ÅS IL FOTBALL">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#20</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅS IL FOTBALL</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>16 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.asfotball.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=983530559" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Idrettsveien 14, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Aktiviteter i idrettslag og -klubber</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Geir Åge Sneis</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4799351133" class="contact-link"><i data-lucide="phone"></i>+47 99 35 11 33</a><a href="mailto:post@asfotball.no" class="contact-link"><i data-lucide="mail"></i>post@asfotball.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Idrettsklubb med lokalt engasjement. Mange frivillige og ansatte med kveldstider. Sentral beliggenhet i Ås.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="13" data-name="ÅS ELEKTRISKE AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#21</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅS ELEKTRISKE AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>13 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.aas-elektriske.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=960433440" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Myrveien 4, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Elektrisk installasjonsarbeid</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">André Haug</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764941065" class="contact-link"><i data-lucide="phone"></i>+47 64 94 10 65</a><a href="mailto:firmapost@aas-elektriske.no" class="contact-link"><i data-lucide="mail"></i>firmapost@aas-elektriske.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Elektroentreprenør med lang historie i lokalmiljøet. Lokalisert i Myrveien industriområde med Åspro, Amada Norway og Filmassist i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="12" data-name="BRØNNERUD SFO">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#22</div>
+                    <div class="header-content">
+                        <h2 class="company-name">BRØNNERUD SFO</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>12 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=987907746" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Drøbakveien, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Dagaktivitetstilbud for barn</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Chamalie Arembage</span>
+                <div class="contact-role">SFO-leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4795258701" class="contact-link"><i data-lucide="phone"></i>+47 952 58 701</a><a href="mailto:chamalie.arembage@as.kommune.no" class="contact-link"><i data-lucide="mail"></i>chamalie.arembage@as.kommune.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Del av Brønnerud skole med faste ettermiddagstider. Del av Ås kommune. Nærhet til Rustad Skole og Ås Ungdomsskole.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="11" data-name="FOLLO FUTURA AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#23</div>
+                    <div class="header-content">
+                        <h2 class="company-name">FOLLO FUTURA AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>11 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.follo-futura.no" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=919701501" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Brekkeveien 43, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Arbeidstrening og varig tilrettelagt arbeid</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Mette Veiby</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764942165" class="contact-link"><i data-lucide="phone"></i>+47 64 94 21 65</a><a href="mailto:mette@follo-futura.no" class="contact-link"><i data-lucide="mail"></i>mette@follo-futura.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Best i Norge på å skaffe folk jobb (1. plass 2023). Arbeidsinkluderingsbedrift med 50 års erfaring. Nærhet til Coop Extra og NT Kiosk i Brekkeveien.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="9" data-name="AMADA NORWAY AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#24</div>
+                    <div class="header-content">
+                        <h2 class="company-name">AMADA NORWAY AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>9 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=933966674" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Myrveien 12, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Engroshandel med maskiner og utstyr ellers</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Leo Joseph Feeney</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764973100" class="contact-link"><i data-lucide="phone"></i>+47 64 97 31 00</a><a href="mailto:norway@amada.eu" class="contact-link"><i data-lucide="mail"></i>norway@amada.eu</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Salgs- og serviceselskap for platebearbeidingsmaskiner. Del av internasjonalt AMADA-konsern. Lokalisert i Myrveien med Åspro, Ås Elektriske og Filmassist i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="18" data-name="NT KIOSK Dao thi Duong Nu">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#25</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NT KIOSK Dao thi Duong Nu</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>18 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=983570488" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Brekkeveien 3, 1430 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med bredt vareutvalg med hovedvekt på nærings- og nytelsesmidler</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Dao thi Duong Nu</span>
+                <div class="contact-role">Innehaver</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:tuanmemo@yahoo.com" class="contact-link"><i data-lucide="mail"></i>tuanmemo@yahoo.com</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Dagligvarehandel i Brekkeveien handelsområde. Nærhet til Coop Extra Raveien og Follo Futura.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="7" data-name="ÅSKRYSSET AUTO AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#26</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅSKRYSSET AUTO AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=996402029" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Langbakken 14, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Reparasjon og vedlikehold av motorvogner</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Daglig leder</span>
+                <div class="contact-role">+47 64 94 11 00</div>
+            </div>
+            <div class="contact-links"><a href="tel:post@askrysset.no" class="contact-link"><i data-lucide="phone"></i>post@askrysset.no</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Bilverksted med faste åpningstider. Lokalisert i Langbakken industriområde med Aas Bilverksted, HS MC-Senter og Krise- og Incestsenteret i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="7" data-name="AAS BILVERKSTED ERIKSEN AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#27</div>
+                    <div class="header-content">
+                        <h2 class="company-name">AAS BILVERKSTED ERIKSEN AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=910045717" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Langbakken 12, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Reparasjon og vedlikehold av motorvogner</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Daglig leder</span>
+                <div class="contact-role">+47 64 94 00 68</div>
+            </div>
+            <div class="contact-links"><a href="tel:aasbil@aasbil.no" class="contact-link"><i data-lucide="phone"></i>aasbil@aasbil.no</a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Lokalt bilverksted med faste åpningstider. Lokalisert i Langbakken industriområde med Åskrysset Auto, HS MC-Senter og Schytz i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="7" data-name="ÅS RØRLEGGERBEDRIFT AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#28</div>
+                    <div class="header-content">
+                        <h2 class="company-name">ÅS RØRLEGGERBEDRIFT AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>7 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=947941755" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Myrveien 8, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>VVS-arbeid</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Daglig leder</span>
+                <div class="contact-role">+47 64 97 50 60</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Rørleggerbedrift med faste arbeidstider. Lokalisert i Myrveien industriområde med Ås Elektriske, Åspro og Jan Wold Eiendom i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="5" data-name="NORDISKT GENRESURSCENTER">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#29</div>
+                    <div class="header-content">
+                        <h2 class="company-name">NORDISKT GENRESURSCENTER</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="https://www.nordgen.org" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=993231371" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Oluf Thesens vei 6, 1433 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Tjenester tilknyttet skogbruk</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Mervi Honkatukia</span>
+                <div class="contact-role">Section Leader Farm Animals (Norge)</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4740729478" class="contact-link"><i data-lucide="phone"></i>+47 40 72 94 78</a><a href="mailto:mervi.honkatukia@nordgen.org" class="contact-link"><i data-lucide="mail"></i>mervi.honkatukia@nordgen.org</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Nordisk genbank med fokus på biodiversitet og bærekraft. Forskningssamarbeid med NMBU og NIBIO. Samlokalisert på Campus Ås.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="5" data-name="JAN WOLD EIENDOM AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#30</div>
+                    <div class="header-content">
+                        <h2 class="company-name">JAN WOLD EIENDOM AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=829651602" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Myrveien 10, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Utleie av egen eller leid fast eiendom</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Jan Wold</span>
+                <div class="contact-role">Styreleder</div>
+            </div>
+            <div class="contact-links"><a href="tel:nan" class="contact-link"><i data-lucide="phone"></i></a><a href="mailto:nan" class="contact-link"><i data-lucide="mail"></i></a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Eiendomsselskap i Myrveien industriområde. Utleier til flere bedrifter - kan være døråpner for samkjøring med Åspro, Ås Elektriske og andre leietakere.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="5" data-name="SCHYTZ AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#31</div>
+                    <div class="header-content">
+                        <h2 class="company-name">SCHYTZ AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=992873175" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Langbakken 58, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Annen teknisk konsulentvirksomhet</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Harald Schytz</span>
+                <div class="contact-role">Daglig leder</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4764973595" class="contact-link"><i data-lucide="phone"></i>+47 64 97 35 95</a><a href="mailto:harald@schytz.no" class="contact-link"><i data-lucide="mail"></i>harald@schytz.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>Teknisk konsulentfirma med typiske kontoratider. Lokalisert i Langbakken med Krise- og Incestsenteret, Åskrysset Auto og Aas Bilverksted i nærheten.</p>
+        </div>
+        </article>
+
+        <article class="company-card" data-score="0" data-employees="5" data-name="HS MC-SENTER AS">
+            <div class="card-main">
+                <div class="card-header">
+                    <div class="rank-badge">#32</div>
+                    <div class="header-content">
+                        <h2 class="company-name">HS MC-SENTER AS</h2>
+                        <div class="meta-row">
+                            <span class="employee-count"><i data-lucide="users"></i>5 ansatte</span>
+                            <span class="score-badge score-low"><i data-lucide="target"></i>0%</span>
+                            <div class="general-links"><a href="nan" target="_blank" class="general-link"><i data-lucide="globe"></i>Nettside</a><a href="mailto:nan" class="general-link"><i data-lucide="mail"></i>Kontakt</a><a href="https://www.proff.no/bransjesøk?q=916251335" target="_blank" class="general-link"><i data-lucide="external-link"></i>Proff</a></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-item"><i data-lucide="map-pin"></i>Langbakken 16, 1434 ÅS</span>
+                        <span class="info-item"><i data-lucide="briefcase"></i>Detaljhandel med motorsykler og tilhørende deler og utstyr</span>
+                    </div>
+                    <div class="contacts-section"><div class="contact-card">
+            <div class="contact-header">
+                <span class="contact-name">Ronny</span>
+                <div class="contact-role">Innehaver</div>
+            </div>
+            <div class="contact-links"><a href="tel:+4797598591" class="contact-link"><i data-lucide="phone"></i>+47 97 59 85 91</a><a href="mailto:ronny@hsmcsenter.no" class="contact-link"><i data-lucide="mail"></i>ronny@hsmcsenter.no</a></div>
+        </div></div>
+                </div>
+            </div>
+            
+        <div class="sales-argument">
+            <i data-lucide="lightbulb"></i>
+            <p>MC-butikk med faste åpningstider. Lokalisert i Langbakken industriområde med Åskrysset Auto, Aas Bilverksted og Schytz i nærheten.</p>
+        </div>
+        </article>
     </div>
 
     <div class="footer">
-        Generert 2026-02-04 10:49 · Data fra Brønnøysundregistrene
+        Generert 2026-02-04 15:33 · Data fra Brønnøysundregistrene<br>
+        <small>Score basert på: ansatte, bransje (skiftarbeid), offentlig sektor, forskning/campus</small>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const markers = [{"lat": 59.67079709209151, "lon": 10.795325549152027, "name": "JAN WOLD EIENDOM AS", "employees": "5", "address": "Myrveien 10, 1434 \u00c5S"}, {"lat": 59.667750565040286, "lon": 10.794331692862162, "name": "\u00c5SKRYSSET AUTO AS", "employees": "7", "address": "Langbakken 14, 1434 \u00c5S"}, {"lat": 59.671884309171276, "lon": 10.796935671530326, "name": "FILMASSIST AS", "employees": "7", "address": "Myrveien 18, 1434 \u00c5S"}, {"lat": 59.6656689717858, "lon": 10.759826167041197, "name": "NORDISKT GENRESURSCENTER", "employees": "5", "address": "Oluf Thesens vei 6, 1433 \u00c5S"}, {"lat": 59.66629571431088, "lon": 10.774175845417348, "name": "NIBIO - NORSK INSTITUTT FOR BIO\u00d8KONOMI", "employees": "780", "address": "H\u00f8gskoleveien 7, 1433 \u00c5S"}, {"lat": 59.64859513079558, "lon": 10.787804114712538, "name": "NT KIOSK Dao thi Duong Nu", "employees": "18", "address": "Brekkeveien 3, 1430 \u00c5S"}, {"lat": 59.66912547401742, "lon": 10.79893819830569, "name": "\u00c5S IL FOTBALL", "employees": "16", "address": "Idrettsveien 14, 1434 \u00c5S"}, {"lat": 59.667813833552415, "lon": 10.795943671754543, "name": "KRISE- OG INCESTSENTERET I FOLLO IKS", "employees": "47", "address": "Langbakken 9, 1434 \u00c5S"}, {"lat": 59.686570074471256, "lon": 10.81147410335163, "name": "STIFTELSEN STEINERSKOLEN I \u00c5S", "employees": "37", "address": "Haugerudveien 25, 1434 \u00c5S"}, {"lat": 59.66655770654772, "lon": 10.769941119389193, "name": "VITENPARKEN CAMPUS \u00c5S STI", "employees": "60", "address": "H\u00f8gskoleveien 1, 1433 \u00c5S"}, {"lat": 59.66926172832721, "lon": 10.760559604428375, "name": "VETERIN\u00c6RINSTITUTTET", "employees": "361", "address": "Arboretveien 57, 1433 \u00c5S"}, {"lat": 59.66636100263852, "lon": 10.768009761714662, "name": "NORGES MILJ\u00d8- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU)", "employees": "2340", "address": "Universitetstunet 3, 1433 \u00c5S"}, {"lat": 59.67169109369452, "lon": 10.801854673096567, "name": "SCHYTZ AS", "employees": "5", "address": "Langbakken 58, 1434 \u00c5S"}, {"lat": 59.66991214422164, "lon": 10.795736324997149, "name": "\u00c5S ELEKTRISKE AS", "employees": "13", "address": "Myrveien 4, 1434 \u00c5S"}, {"lat": 59.66776500548771, "lon": 10.772923659253959, "name": "STIFTELSEN \u00c5KEBAKKE BARNEHAGE", "employees": "20", "address": "Utveien 2, 1433 \u00c5S"}, {"lat": 59.66573178091431, "lon": 10.75601064700807, "name": "NLR REGNSKAP AS", "employees": "31", "address": "Osloveien 1, 1433 \u00c5S"}, {"lat": 59.66733743127569, "lon": 10.794657603310553, "name": "AAS BILVERKSTED ERIKSEN AS", "employees": "7", "address": "Langbakken 12, 1434 \u00c5S"}, {"lat": 59.65035310079462, "lon": 10.788710420207137, "name": "FOLLO FUTURA AS", "employees": "11", "address": "Brekkeveien 43, 1430 \u00c5S"}, {"lat": 59.66798057087862, "lon": 10.794917473781465, "name": "HS MC-SENTER AS", "employees": "5", "address": "Langbakken 16, 1434 \u00c5S"}, {"lat": 59.67053030633717, "lon": 10.796639457216612, "name": "AMADA NORWAY AS", "employees": "9", "address": "Myrveien 12, 1434 \u00c5S"}, {"lat": 59.67057348165426, "lon": 10.795585262270704, "name": "\u00c5S R\u00d8RLEGGERBEDRIFT AS", "employees": "7", "address": "Myrveien 8, 1434 \u00c5S"}, {"lat": 59.666516339731224, "lon": 10.77114266883089, "name": "STUDENTSAMSKIPNADEN I \u00c5S", "employees": "142", "address": "Christian Magnus Falsens vei 3, 1433 \u00c5S"}, {"lat": 59.67120902574711, "lon": 10.795874956871858, "name": "\u00c5SPRO ARBEID OG KOMPETANSE AS", "employees": "58", "address": "Myrveien 14, 1434 \u00c5S"}, {"lat": 59.666854353625325, "lon": 10.776699851587654, "name": "AGRIBIOTIX AS", "employees": "9", "address": "H\u00f8gskoleveien 12, 1433 \u00c5S"}, {"lat": 59.665950486979455, "lon": 10.811201196351403, "name": "RUSTAD SKOLE", "employees": "81", "address": "Bestemors vei 2, 1434 \u00c5S"}, {"lat": 59.64894234563765, "lon": 10.787107471044628, "name": "COOP \u00d8ST SA AVD 3313 EXTRA RAVEIEN", "employees": "21", "address": "Brekkeveien 1, 1430 \u00c5S"}, {"lat": 59.67039274041565, "lon": 10.800449702333507, "name": "\u00c5S UNGDOMSSKOLE", "employees": "72", "address": "Mellomveien 4, 1434 \u00c5S"}, {"lat": 59.656627810500964, "lon": 10.793382442646188, "name": "MOER SYKEHJEM", "employees": "238", "address": "Tunveien 2, 1430 \u00c5S"}, {"lat": 59.66829191173413, "lon": 10.76268373482877, "name": "NORGES MILJ\u00d8- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU) DYRESYKEHUSET", "employees": "506", "address": "Elizabeth Stephansens vei 15, 1433 \u00c5S"}, {"lat": 59.655801251670525, "lon": 10.792741956086559, "name": "TUNVEIEN BARNEHAGE", "employees": "54", "address": "Tunveien 13, 1430 \u00c5S"}, {"lat": 59.65654262782467, "lon": 10.791794686532471, "name": "\u00c5S KOMMUNE AMBULERENDE PSYKISK HELSE S\u00d8R", "employees": "56", "address": "Tunveien 1, 1430 \u00c5S"}, {"lat": 59.664486365044986, "lon": 10.779113236668522, "name": "BR\u00d8NNERUD SFO", "employees": "12", "address": "Dr\u00f8bakveien, 1430 \u00c5S"}];
+        lucide.createIcons();
+
+        const markers = [{"lat": 59.66636100263852, "lon": 10.768009761714662, "name": "NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU)", "employees": "2340", "address": "Universitetstunet 3, 1433 ÅS", "score": 70}, {"lat": 59.66829191173413, "lon": 10.76268373482877, "name": "NORGES MILJØ- OG BIOVITENSKAPELIGE UNIVERSITET (NMBU) DYRESYKEHUSET", "employees": "506", "address": "Elizabeth Stephansens vei 15, 1433 ÅS", "score": 70}, {"lat": 59.65654262782467, "lon": 10.791794686532471, "name": "ÅS KOMMUNE AMBULERENDE PSYKISK HELSE SØR", "employees": "56", "address": "Tunveien 1, 1430 ÅS", "score": 60}, {"lat": 59.66629571431088, "lon": 10.774175845417348, "name": "NIBIO - NORSK INSTITUTT FOR BIOØKONOMI", "employees": "780", "address": "Høgskoleveien 7, 1433 ÅS", "score": 60}, {"lat": 59.66926172832721, "lon": 10.760559604428375, "name": "VETERINÆRINSTITUTTET", "employees": "361", "address": "Arboretveien 57, 1433 ÅS", "score": 50}, {"lat": 59.656627810500964, "lon": 10.793382442646188, "name": "MOER SYKEHJEM", "employees": "238", "address": "Tunveien 2, 1430 ÅS", "score": 40}, {"lat": 59.666516339731224, "lon": 10.77114266883089, "name": "STUDENTSAMSKIPNADEN I ÅS", "employees": "142", "address": "Christian Magnus Falsens vei 3, 1433 ÅS", "score": 30}, {"lat": 59.665950486979455, "lon": 10.811201196351403, "name": "RUSTAD SKOLE", "employees": "81", "address": "Bestemors vei 2, 1434 ÅS", "score": 30}, {"lat": 59.67039274041565, "lon": 10.800449702333507, "name": "ÅS UNGDOMSSKOLE", "employees": "72", "address": "Mellomveien 4, 1434 ÅS", "score": 30}, {"lat": 59.671884309171276, "lon": 10.796935671530326, "name": "FILMASSIST AS", "employees": "7", "address": "Myrveien 18, 1434 ÅS", "score": 30}, {"lat": 59.666854353625325, "lon": 10.776699851587654, "name": "AGRIBIOTIX AS", "employees": "9", "address": "Høgskoleveien 12, 1433 ÅS", "score": 30}, {"lat": 59.655801251670525, "lon": 10.792741956086559, "name": "TUNVEIEN BARNEHAGE", "employees": "54", "address": "Tunveien 13, 1430 ÅS", "score": 30}, {"lat": 59.686570074471256, "lon": 10.81147410335163, "name": "STIFTELSEN STEINERSKOLEN I ÅS", "employees": "37", "address": "Haugerudveien 25, 1434 ÅS", "score": 20}, {"lat": 59.66776500548771, "lon": 10.772923659253959, "name": "STIFTELSEN ÅKEBAKKE BARNEHAGE", "employees": "20", "address": "Utveien 2, 1433 ÅS", "score": 20}, {"lat": 59.67120902574711, "lon": 10.795874956871858, "name": "ÅSPRO ARBEID OG KOMPETANSE AS", "employees": "58", "address": "Myrveien 14, 1434 ÅS", "score": 20}, {"lat": 59.66655770654772, "lon": 10.769941119389193, "name": "VITENPARKEN CAMPUS ÅS STI", "employees": "60", "address": "Høgskoleveien 1, 1433 ÅS", "score": 20}, {"lat": 59.64894234563765, "lon": 10.787107471044628, "name": "COOP ØST SA AVD 3313 EXTRA RAVEIEN", "employees": "21", "address": "Brekkeveien 1, 1430 ÅS", "score": 10}, {"lat": 59.66573178091431, "lon": 10.75601064700807, "name": "NLR REGNSKAP AS", "employees": "31", "address": "Osloveien 1, 1433 ÅS", "score": 10}, {"lat": 59.667813833552415, "lon": 10.795943671754543, "name": "KRISE- OG INCESTSENTERET I FOLLO IKS", "employees": "47", "address": "Langbakken 9, 1434 ÅS", "score": 10}, {"lat": 59.66912547401742, "lon": 10.79893819830569, "name": "ÅS IL FOTBALL", "employees": "16", "address": "Idrettsveien 14, 1434 ÅS", "score": 0}, {"lat": 59.66991214422164, "lon": 10.795736324997149, "name": "ÅS ELEKTRISKE AS", "employees": "13", "address": "Myrveien 4, 1434 ÅS", "score": 0}, {"lat": 59.664486365044986, "lon": 10.779113236668522, "name": "BRØNNERUD SFO", "employees": "12", "address": "Drøbakveien, 1430 ÅS", "score": 0}, {"lat": 59.65035310079462, "lon": 10.788710420207137, "name": "FOLLO FUTURA AS", "employees": "11", "address": "Brekkeveien 43, 1430 ÅS", "score": 0}, {"lat": 59.67053030633717, "lon": 10.796639457216612, "name": "AMADA NORWAY AS", "employees": "9", "address": "Myrveien 12, 1434 ÅS", "score": 0}, {"lat": 59.64859513079558, "lon": 10.787804114712538, "name": "NT KIOSK Dao thi Duong Nu", "employees": "18", "address": "Brekkeveien 3, 1430 ÅS", "score": 0}, {"lat": 59.667750565040286, "lon": 10.794331692862162, "name": "ÅSKRYSSET AUTO AS", "employees": "7", "address": "Langbakken 14, 1434 ÅS", "score": 0}, {"lat": 59.66733743127569, "lon": 10.794657603310553, "name": "AAS BILVERKSTED ERIKSEN AS", "employees": "7", "address": "Langbakken 12, 1434 ÅS", "score": 0}, {"lat": 59.67057348165426, "lon": 10.795585262270704, "name": "ÅS RØRLEGGERBEDRIFT AS", "employees": "7", "address": "Myrveien 8, 1434 ÅS", "score": 0}, {"lat": 59.6656689717858, "lon": 10.759826167041197, "name": "NORDISKT GENRESURSCENTER", "employees": "5", "address": "Oluf Thesens vei 6, 1433 ÅS", "score": 0}, {"lat": 59.67079709209151, "lon": 10.795325549152027, "name": "JAN WOLD EIENDOM AS", "employees": "5", "address": "Myrveien 10, 1434 ÅS", "score": 0}, {"lat": 59.67169109369452, "lon": 10.801854673096567, "name": "SCHYTZ AS", "employees": "5", "address": "Langbakken 58, 1434 ÅS", "score": 0}, {"lat": 59.66798057087862, "lon": 10.794917473781465, "name": "HS MC-SENTER AS", "employees": "5", "address": "Langbakken 16, 1434 ÅS", "score": 0}];
         let map = null;
-        let mapInitialized = false;
 
         function toggleMap() {
             const mapEl = document.getElementById('map');
-            const btn = document.querySelector('.toggle-map');
-
             if (mapEl.classList.contains('visible')) {
                 mapEl.classList.remove('visible');
-                btn.textContent = 'Vis kart';
             } else {
                 mapEl.classList.add('visible');
-                btn.textContent = 'Skjul kart';
-
-                if (!mapInitialized) {
-                    initMap();
-                    mapInitialized = true;
-                } else {
-                    map.invalidateSize();
-                }
+                if (!map) initMap();
+                else map.invalidateSize();
             }
         }
 
         function initMap() {
-            if (markers.length === 0) return;
-
-            const bounds = markers.reduce((b, m) => {
-                return [[Math.min(b[0][0], m.lat), Math.min(b[0][1], m.lon)],
-                        [Math.max(b[1][0], m.lat), Math.max(b[1][1], m.lon)]];
-            }, [[90, 180], [-90, -180]]);
-
+            const bounds = markers.reduce((b, m) => [[Math.min(b[0][0], m.lat), Math.min(b[0][1], m.lon)], [Math.max(b[1][0], m.lat), Math.max(b[1][1], m.lon)]], [[90, 180], [-90, -180]]);
             map = L.map('map').fitBounds(bounds, { padding: [20, 20] });
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap, &copy; CARTO'
-            }).addTo(map);
-
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
             markers.forEach(m => {
                 L.circleMarker([m.lat, m.lon], {
                     radius: Math.min(Math.max(Math.sqrt(m.employees || 20) * 2, 5), 20),
-                    fillColor: '#E60000',
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.7
-                }).addTo(map).bindPopup(
-                    `<strong>${m.name}</strong><br>${m.employees} ansatte<br><small>${m.address}</small>`
-                );
+                    fillColor: '#E60000', color: '#fff', weight: 2, fillOpacity: 0.7
+                }).addTo(map).bindPopup(`<strong>${m.name}</strong><br>${m.employees} ansatte<br>Score: ${m.score}%`);
             });
         }
 
-        // Sort
-        document.querySelectorAll('th.sortable').forEach(th => {
-            th.addEventListener('click', function() {
-                const table = document.getElementById('companies-table');
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                const colIndex = Array.from(th.parentNode.children).indexOf(th);
-                const sortType = th.dataset.sort;
-                const isAsc = th.classList.contains('sort-asc');
+        function sortCards(by) {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
 
-                document.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
-                th.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
+            const container = document.getElementById('cards');
+            const cards = Array.from(container.children);
 
-                rows.sort((a, b) => {
-                    let aVal = a.children[colIndex].textContent.trim();
-                    let bVal = b.children[colIndex].textContent.trim();
-
-                    if (sortType === 'number') {
-                        aVal = parseInt(aVal) || 0;
-                        bVal = parseInt(bVal) || 0;
-                    }
-
-                    if (aVal < bVal) return isAsc ? 1 : -1;
-                    if (aVal > bVal) return isAsc ? -1 : 1;
-                    return 0;
-                });
-
-                rows.forEach(row => tbody.appendChild(row));
+            cards.sort((a, b) => {
+                if (by === 'score') return parseInt(b.dataset.score) - parseInt(a.dataset.score);
+                if (by === 'employees') return parseInt(b.dataset.employees) - parseInt(a.dataset.employees);
+                return a.dataset.name.localeCompare(b.dataset.name, 'no');
             });
-        });
 
-        // Sync modal functions
+            cards.forEach((card, i) => {
+                card.querySelector('.rank-badge').textContent = '#' + (i + 1);
+                container.appendChild(card);
+            });
+        }
+
         function showSyncModal() {
-            document.getElementById('sync-modal').classList.add('visible');
+            document.getElementById('sync-modal').style.display = 'flex';
         }
 
         function closeSyncModal() {
-            document.getElementById('sync-modal').classList.remove('visible');
+            document.getElementById('sync-modal').style.display = 'none';
         }
 
         function copyCommand() {
-            const command = document.getElementById('sync-command').textContent;
-            navigator.clipboard.writeText(command).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                btn.textContent = 'Kopiert!';
-                setTimeout(() => btn.textContent = 'Kopier', 2000);
-            });
+            navigator.clipboard.writeText(document.getElementById('sync-command').textContent);
         }
 
-        // Close modal on outside click
-        document.getElementById('sync-modal').addEventListener('click', function(e) {
-            if (e.target === this) closeSyncModal();
-        });
-
-        // Close modal on Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeSyncModal();
+        document.getElementById('sync-modal').addEventListener('click', e => {
+            if (e.target.id === 'sync-modal') closeSyncModal();
         });
     </script>
 </body>
