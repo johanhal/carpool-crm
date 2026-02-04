@@ -3,7 +3,7 @@
 ## Overview
 Sales tool for Ruter's carpooling pilot targeting companies in specific geographic areas.
 
-**Live:** https://ruter-carpool-crm.vercel.app
+**Live:** https://carpool-crm.vercel.app
 **Password:** `bevegelsesfrihet`
 
 ## Areas
